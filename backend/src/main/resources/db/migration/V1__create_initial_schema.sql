@@ -1,7 +1,9 @@
 CREATE TABLE course (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(20) NOT NULL UNIQUE,
-    name VARCHAR(200) NOT NULL
+    name VARCHAR(200) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE course_offering (
@@ -9,6 +11,8 @@ CREATE TABLE course_offering (
     course_id BIGINT NOT NULL,
     academic_year VARCHAR(20) NOT NULL,
     period VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_course_offering_course
         FOREIGN KEY (course_id)
@@ -21,6 +25,8 @@ CREATE TABLE feedback (
     rating INTEGER NOT NULL,
     comment TEXT,
     submitted_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_feedback_course_offering
         FOREIGN KEY (course_offering_id)
