@@ -7,6 +7,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "course")
@@ -16,10 +18,14 @@ public class Course extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @NotBlank
+    @Size(max = 20)
+    @Column(nullable = false, unique = true)
     private String code;
 
-    @Column(nullable = false, length = 200)
+    @NotBlank
+    @Size(max = 200)
+    @Column(nullable = false)
     private String name;
 
     protected Course() {

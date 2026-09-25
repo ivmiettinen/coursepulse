@@ -23,10 +23,14 @@ public class CourseOffering extends AuditableEntity {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @Column(name = "academic_year", nullable = false, length = 20)
+    @NotBlank
+    @Size(max = 20)
+    @Column(name = "academic_year", nullable = false)
     private String academicYear;
 
-    @Column(nullable = false, length = 50)
+    @NotBlank
+    @Size(max = 50)
+    @Column(nullable = false)
     private String period;
 
     protected CourseOffering() {
