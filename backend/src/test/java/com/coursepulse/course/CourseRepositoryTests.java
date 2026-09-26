@@ -2,19 +2,21 @@ package com.coursepulse.course;
 
 import com.coursepulse.PostgresTestConfiguration;
 import jakarta.persistence.EntityManager;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.auditing.AuditingHandler;
 import org.springframework.data.auditing.CurrentDateTimeProvider;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.TestConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Import(PostgresTestConfiguration.class)
@@ -86,4 +88,36 @@ class CourseRepositoryTests {
         assertThat(updated.getCreatedAt()).isEqualTo(createdAt);
         assertThat(updated.getUpdatedAt()).isEqualTo(updatedAt);
     }
+
+    @Test
+    void save_nameAtMaximumLength_persistsName() {
+        // Arrange
+        String maximumLengthName = "a".repeat(200);
+
+        // Act
+        Course course = courseRepository.saveAndFlush(new Course("TEST201", maximumLengthName));
+        Long courseId = course.getId();
+        entityManager.clear();
+
+        // Assert
+        Course saved = courseRepository.findById(courseId).orElseThrow();
+        assertThat(saved.getName()).isEqualTo(maximumLengthName);
+    }
+
+    @Test
+    void save_nameExceedingMaximumLength_throwsConstraintViolationException() {
+        // Arrange
+        Course courseWithTooLongName = new Course("TEST202", "a".repeat(201));
+
+        // Act and assert
+        assertThatThrownBy(() -> courseRepository.saveAndFlush(courseWithTooLongName))
+                .isInstanceOfSatisfying(ConstraintViolationException.class, exception ->
+                        assertThat(exception.getConstraintViolations())
+                                .anySatisfy(violation -> {
+                                    assertThat(violation.getPropertyPath().toString()).isEqualTo("name");
+                                    assertThat(violation.getConstraintDescriptor().getAnnotation())
+                                            .isInstanceOf(jakarta.validation.constraints.Size.class);
+                                }));
+    }
+
 }
