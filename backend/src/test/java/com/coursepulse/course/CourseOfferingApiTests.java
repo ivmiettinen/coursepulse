@@ -134,8 +134,32 @@ class CourseOfferingApiTests {
         mockMvc.perform(get(path))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.instance").value(path));
+                .andExpect(content().json("""
+                        {
+                          "title": "Bad Request",
+                          "status": 400,
+                          "detail": "A request parameter has an invalid format.",
+                          "instance": "%s",
+                          "errors": [{"field": "id", "message": "Must be a valid integer."}]
+                        }
+                        """.formatted(path), JsonCompareMode.STRICT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"' OR 1=1 --", "<img src=x onerror=alert(1)>", "9223372036854775808"})
+    void get_untrustedOrOverflowingId_returnsSafeParameterMessage(String invalidId) throws Exception {
+        // Arrange: the instance URI identifies the request; messages must not repeat its rejected input.
+
+        // Act and assert
+        mockMvc.perform(get("/api/course-offerings/{id}", invalidId))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("A request parameter has an invalid format."))
+                .andExpect(jsonPath("$.errors.length()").value(1))
+                .andExpect(jsonPath("$.errors[0].field").value("id"))
+                .andExpect(jsonPath("$.errors[0].message").value("Must be a valid integer."))
+                .andExpect(jsonPath("$.exception").doesNotExist())
+                .andExpect(jsonPath("$.trace").doesNotExist());
     }
 
     @Test

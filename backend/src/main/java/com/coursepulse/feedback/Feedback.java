@@ -30,15 +30,15 @@ public class Feedback extends AuditableEntity {
     @JoinColumn(name = "course_offering_id", nullable = false)
     private CourseOffering courseOffering;
 
-    @Min(1)
-    @Max(5)
+    @Min(value = 1, message = "Rating must be at least {value}.")
+    @Max(value = 5, message = "Rating must not exceed {value}.")
     @Column(nullable = false)
     private int rating;
 
-    @Size(max = 2000)
+    @Size(max = 2000, message = "Comment must not exceed {max} characters.")
     private String comment;
 
-    @NotNull
+    @NotNull(message = "Submission time is required.")
     @Column(name = "submitted_at", nullable = false, updatable = false)
     private Instant submittedAt;
 

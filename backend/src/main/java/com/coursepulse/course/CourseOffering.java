@@ -25,13 +25,13 @@ public class CourseOffering extends AuditableEntity {
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @NotBlank
-    @Size(max = 20)
+    @NotBlank(message = "Academic year is required.")
+    @Size(max = 20, message = "Academic year must not exceed {max} characters.")
     @Column(name = "academic_year", nullable = false)
     private String academicYear;
 
-    @NotBlank
-    @Size(max = 50)
+    @NotBlank(message = "Period is required.")
+    @Size(max = 50, message = "Period must not exceed {max} characters.")
     @Column(nullable = false)
     private String period;
 

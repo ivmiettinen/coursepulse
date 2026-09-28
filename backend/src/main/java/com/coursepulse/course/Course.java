@@ -18,13 +18,13 @@ public class Course extends AuditableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    @Size(max = 20)
+    @NotBlank(message = "Course code is required.")
+    @Size(max = 20, message = "Course code must not exceed {max} characters.")
     @Column(nullable = false, unique = true)
     private String code;
 
-    @NotBlank
-    @Size(max = 200)
+    @NotBlank(message = "Course name is required.")
+    @Size(max = 200, message = "Course name must not exceed {max} characters.")
     @Column(nullable = false)
     private String name;
 
