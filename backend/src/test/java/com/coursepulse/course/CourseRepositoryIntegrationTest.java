@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Import(PostgresTestConfiguration.class)
 @Transactional
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-class CourseRepositoryTests {
+class CourseRepositoryIntegrationTest {
 
     private final CourseRepository courseRepository;
 
@@ -30,7 +30,7 @@ class CourseRepositoryTests {
 
     private final AuditingHandler auditingHandler;
 
-    CourseRepositoryTests(CourseRepository courseRepository,
+    CourseRepositoryIntegrationTest(CourseRepository courseRepository,
                           EntityManager entityManager,
                           AuditingHandler auditingHandler) {
         this.courseRepository = courseRepository;

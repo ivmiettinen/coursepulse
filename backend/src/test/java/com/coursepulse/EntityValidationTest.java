@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class EntityValidationTests {
+class EntityValidationTest {
 
     private static ValidatorFactory validatorFactory;
     private static Validator validator;

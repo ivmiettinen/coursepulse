@@ -26,12 +26,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 @Sql("/sql/course-offering-api-data.sql")
 @Sql(scripts = "/sql/course-offering-api-cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-class CourseOfferingApiTests {
+class CourseOfferingApiIntegrationTest {
 
     private final MockMvc mockMvc;
     private final JdbcTemplate jdbcTemplate;
 
-    CourseOfferingApiTests(MockMvc mockMvc, JdbcTemplate jdbcTemplate) {
+    CourseOfferingApiIntegrationTest(MockMvc mockMvc, JdbcTemplate jdbcTemplate) {
         this.mockMvc = mockMvc;
         this.jdbcTemplate = jdbcTemplate;
     }

@@ -22,14 +22,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Import(PostgresTestConfiguration.class)
 @Transactional
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-class FeedbackRepositoryTests {
+class FeedbackRepositoryIntegrationTest {
 
     private final CourseRepository courseRepository;
     private final CourseOfferingRepository courseOfferingRepository;
     private final FeedbackRepository feedbackRepository;
     private final EntityManager entityManager;
 
-    FeedbackRepositoryTests(CourseRepository courseRepository,
+    FeedbackRepositoryIntegrationTest(CourseRepository courseRepository,
                             CourseOfferingRepository courseOfferingRepository,
                             FeedbackRepository feedbackRepository,
                             EntityManager entityManager) {

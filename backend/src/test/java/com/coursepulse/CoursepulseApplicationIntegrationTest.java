@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Import;
 
 @SpringBootTest
 @Import(PostgresTestConfiguration.class)
-class CoursepulseApplicationTests {
+class CoursepulseApplicationIntegrationTest {
 
 	@Test
 	void contextLoads() {

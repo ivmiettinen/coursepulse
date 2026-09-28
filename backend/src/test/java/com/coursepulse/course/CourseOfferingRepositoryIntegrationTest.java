@@ -14,13 +14,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(PostgresTestConfiguration.class)
 @Transactional
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-class CourseOfferingRepositoryTests {
+class CourseOfferingRepositoryIntegrationTest {
 
     private final CourseRepository courseRepository;
     private final CourseOfferingRepository courseOfferingRepository;
     private final EntityManager entityManager;
 
-    CourseOfferingRepositoryTests(CourseRepository courseRepository,
+    CourseOfferingRepositoryIntegrationTest(CourseRepository courseRepository,
                                   CourseOfferingRepository courseOfferingRepository,
                                   EntityManager entityManager) {
         this.courseRepository = courseRepository;
