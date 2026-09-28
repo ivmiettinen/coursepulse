@@ -1,6 +1,6 @@
 package com.coursepulse.course;
 
-import com.coursepulse.common.persistence.AuditableEntity;
+import com.coursepulse.common.auditing.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

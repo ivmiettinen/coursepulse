@@ -1,6 +1,6 @@
 package com.coursepulse.feedback;
 
-import com.coursepulse.common.persistence.AuditableEntity;
+import com.coursepulse.common.auditing.AuditableEntity;
 import com.coursepulse.course.CourseOffering;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

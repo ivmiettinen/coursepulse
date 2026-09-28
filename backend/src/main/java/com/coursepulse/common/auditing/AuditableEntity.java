@@ -1,4 +1,4 @@
-package com.coursepulse.common.persistence;
+package com.coursepulse.common.auditing;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

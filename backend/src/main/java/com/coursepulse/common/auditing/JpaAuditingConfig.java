@@ -1,4 +1,4 @@
-package com.coursepulse.common.persistence;
+package com.coursepulse.common.auditing;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;

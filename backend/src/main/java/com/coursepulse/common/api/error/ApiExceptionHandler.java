@@ -1,4 +1,4 @@
-package com.coursepulse.common.web;
+package com.coursepulse.common.api.error;
 
 import com.coursepulse.course.CourseOfferingNotFoundException;
 import org.springframework.beans.TypeMismatchException;
