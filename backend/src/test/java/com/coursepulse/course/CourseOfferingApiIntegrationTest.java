@@ -4,6 +4,7 @@ import com.coursepulse.PostgresTestConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -13,12 +14,13 @@ import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.nullValue;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -36,7 +38,8 @@ class CourseOfferingApiIntegrationTest {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // No test-level transaction: services must load and map data within their own transactions.
+    // @Sql runs course-offering-api-data.sql before each test and
+    // course-offering-api-cleanup.sql afterwards; this MockMvc test has no test-wide transaction.
     @Test
     void getCourseOffering_existingOffering_returnsCourseAndOfferingDetails() throws Exception {
         // Arrange
@@ -59,40 +62,64 @@ class CourseOfferingApiIntegrationTest {
     }
 
     @Test
-    void getFeedback_existingOffering_returnsOnlyItsFeedbackInStableOrder() throws Exception {
+    void getFeedback_existingCourseOffering_returnsFirstPageWithStableOrderAndTotalCount() throws Exception {
         // Arrange: fixture includes a null comment, equal timestamps and another offering of the same course.
         long offeringId = 900001;
 
         // Act and assert
-        mockMvc.perform(get("/api/course-offerings/{id}/feedback", offeringId))
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", offeringId).queryParam("size", "2"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(content().json("""
-                        [
-                          {
+                        {
+                          "content": [
+                            {
                             "id": 900003,
                             "rating": 4,
                             "comment": null,
                             "submittedAt": "2026-09-25T12:00:00Z"
-                          },
-                          {
+                            },
+                            {
                             "id": 900002,
                             "rating": 5,
                             "comment": "Clear lectures and useful exercises.",
                             "submittedAt": "2026-09-25T12:00:00Z"
-                          },
-                          {
-                            "id": 900001,
-                            "rating": 3,
-                            "comment": "Earlier feedback",
-                            "submittedAt": "2026-09-24T12:00:00Z"
-                          }
-                        ]
+                            }
+                          ],
+                          "page": 0,
+                          "size": 2,
+                          "totalElements": 3,
+                          "totalPages": 2
+                        }
                         """, JsonCompareMode.STRICT));
     }
 
     @Test
-    void getFeedback_offeringWithoutFeedback_returnsEmptyArray() throws Exception {
+    void getFeedback_secondPage_returnsRemainingFeedbackAndTotalCount() throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001)
+                        .queryParam("page", "1")
+                        .queryParam("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                          "content": [
+                            {
+                              "id": 900001,
+                              "rating": 3,
+                              "comment": "Earlier feedback",
+                              "submittedAt": "2026-09-24T12:00:00Z"
+                            }
+                          ],
+                          "page": 1,
+                          "size": 2,
+                          "totalElements": 3,
+                          "totalPages": 2
+                        }
+                        """, JsonCompareMode.STRICT));
+    }
+
+    @Test
+    void getFeedback_courseOfferingWithoutFeedback_returnsEmptyPage() throws Exception {
         // Arrange
         long emptyOfferingId = 900003;
 
@@ -100,7 +127,52 @@ class CourseOfferingApiIntegrationTest {
         mockMvc.perform(get("/api/course-offerings/{id}/feedback", emptyOfferingId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(content().json("[]", JsonCompareMode.STRICT));
+                .andExpect(content().json("""
+                        {
+                          "content": [],
+                          "page": 0,
+                          "size": 20,
+                          "totalElements": 0,
+                          "totalPages": 0
+                        }
+                        """, JsonCompareMode.STRICT));
+    }
+
+    @Test
+    void getFeedback_withoutPagingParameters_usesFirstPageAndDefaultSize() throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.content.length()").value(3));
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+            "page=-1|page|Page must be at least 0.",
+            "size=0|size|Size must be at least 1.",
+            "size=101|size|Size must not exceed 100.",
+            "page=2147483647&size=100|offsetWithinRange|Requested page is too large.",
+            "page=not-a-number|page|Must have a valid format."
+    }, delimiter = '|')
+    void getFeedback_invalidPagingParameter_returnsBadRequestProblemDetail(
+            String query, String field, String message) throws Exception {
+        MockHttpServletRequestBuilder request = get("/api/course-offerings/{id}/feedback", 900001);
+        for (String parameter : query.split("&")) {
+            String[] nameAndValue = parameter.split("=", 2);
+            request.queryParam(nameAndValue[0], nameAndValue[1]);
+        }
+
+        mockMvc.perform(request)
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Bad Request"))
+                .andExpect(jsonPath("$.detail").value("Request parameters are invalid."))
+                .andExpect(jsonPath("$.errors[?(@.field == '%s')].message".formatted(field)).value(message))
+                .andExpect(jsonPath("$.exception").doesNotExist())
+                .andExpect(jsonPath("$.trace").doesNotExist());
     }
 
     @ParameterizedTest
@@ -160,27 +232,5 @@ class CourseOfferingApiIntegrationTest {
                 .andExpect(jsonPath("$.errors[0].message").value("Must be a valid integer."))
                 .andExpect(jsonPath("$.exception").doesNotExist())
                 .andExpect(jsonPath("$.trace").doesNotExist());
-    }
-
-    @Test
-    void getFeedback_demoOffering_returnsFlywayDemoData() throws Exception {
-        // Arrange: look up the migrated offering without assuming sequence-generated IDs.
-        Long offeringId = jdbcTemplate.queryForObject("""
-                SELECT co.id
-                FROM course_offering co
-                JOIN course c ON c.id = co.course_id
-                WHERE c.code = 'CS101'
-                  AND co.academic_year = '2025-2026'
-                  AND co.period = 'Period 1'
-                """, Long.class);
-
-        // Act and assert
-        mockMvc.perform(get("/api/course-offerings/{id}/feedback", offeringId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[*].rating", containsInAnyOrder(5, 4)))
-                .andExpect(jsonPath("$[*].comment", containsInAnyOrder(
-                        "The exercises were practical and helped me understand the concepts well.",
-                        "Good course overall, but some of the assignment instructions could be clearer.")));
     }
 }

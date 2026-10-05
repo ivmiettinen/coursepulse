@@ -7,12 +7,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.Comparator;
 import java.util.List;
 
 @RestControllerAdvice
@@ -42,6 +44,21 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             errorResponse.setProperty("errors", List.of(error));
         }
 
+        return handleExceptionInternal(exception, errorResponse, headers, status, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail errorResponse = ProblemDetail.forStatusAndDetail(status, "Request parameters are invalid.");
+        List<ParameterError> errors = exception.getBindingResult().getFieldErrors().stream()
+                .map(error -> new ParameterError(error.getField(), error.isBindingFailure()
+                        ? "Must have a valid format."
+                        : error.getDefaultMessage()))
+                .sorted(Comparator.comparing(ParameterError::field).thenComparing(ParameterError::message))
+                .distinct()
+                .toList();
+        errorResponse.setProperty("errors", errors);
         return handleExceptionInternal(exception, errorResponse, headers, status, request);
     }
 

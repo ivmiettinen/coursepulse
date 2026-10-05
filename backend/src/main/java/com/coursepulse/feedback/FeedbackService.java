@@ -2,10 +2,10 @@ package com.coursepulse.feedback;
 
 import com.coursepulse.course.CourseOfferingNotFoundException;
 import com.coursepulse.course.CourseOfferingRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -20,14 +20,20 @@ public class FeedbackService {
         this.courseOfferingRepository = courseOfferingRepository;
     }
 
-    public List<FeedbackDto> getFeedback(Long courseOfferingId) {
+    public FeedbackPageDto getFeedback(Long courseOfferingId, FeedbackQuery query) {
         if (!courseOfferingRepository.existsById(courseOfferingId)) {
             throw new CourseOfferingNotFoundException(courseOfferingId);
         }
 
-        return feedbackRepository.findAllByCourseOfferingIdOrderBySubmittedAtDescIdDesc(courseOfferingId)
-                .stream()
-                .map(FeedbackMapper::toDto)
-                .toList();
+        Page<FeedbackDto> feedbackPage = feedbackRepository
+                .findAllByCourseOfferingIdOrderBySubmittedAtDescIdDesc(
+                        courseOfferingId, PageRequest.of(query.getPage(), query.getSize()))
+                .map(FeedbackMapper::toDto);
+
+
+        return new FeedbackPageDto(feedbackPage.getContent(), feedbackPage.getNumber(), feedbackPage.getSize(),
+                feedbackPage.getTotalElements(), feedbackPage.getTotalPages());
+
     }
+
 }
