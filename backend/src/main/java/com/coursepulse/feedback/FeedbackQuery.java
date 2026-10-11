@@ -16,6 +16,10 @@ public class FeedbackQuery {
     @Max(value = 100, message = "Size must not exceed {value}.")
     private Integer size = 20;
 
+    @Min(value = 1, message = "Rating must be at least {value}.")
+    @Max(value = 5, message = "Rating must not exceed {value}.")
+    private Integer rating;
+
     public Integer getPage() {
         return page;
     }
@@ -30,6 +34,14 @@ public class FeedbackQuery {
 
     public void setSize(Integer size) {
         this.size = size;
+    }
+
+    public Integer getRating() {
+        return rating;
+    }
+
+    public void setRating(Integer rating) {
+        this.rating = rating;
     }
 
     // JPA accepts an int offset even though PageRequest calculates it as a long.

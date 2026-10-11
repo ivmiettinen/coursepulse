@@ -9,18 +9,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.hamcrest.Matchers.nullValue;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -31,11 +30,9 @@ import static org.hamcrest.Matchers.nullValue;
 class CourseOfferingApiIntegrationTest {
 
     private final MockMvc mockMvc;
-    private final JdbcTemplate jdbcTemplate;
 
-    CourseOfferingApiIntegrationTest(MockMvc mockMvc, JdbcTemplate jdbcTemplate) {
+    CourseOfferingApiIntegrationTest(MockMvc mockMvc) {
         this.mockMvc = mockMvc;
-        this.jdbcTemplate = jdbcTemplate;
     }
 
     // @Sql runs course-offering-api-data.sql before each test and
@@ -119,6 +116,43 @@ class CourseOfferingApiIntegrationTest {
     }
 
     @Test
+    void getFeedback_ratingFilter_returnsOnlyMatchingFeedbackForCourseOffering() throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("rating", "5"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                          "content": [
+                            {
+                              "id": 900002,
+                              "rating": 5,
+                              "comment": "Clear lectures and useful exercises.",
+                              "submittedAt": "2026-09-25T12:00:00Z"
+                            }
+                          ],
+                          "page": 0,
+                          "size": 20,
+                          "totalElements": 1,
+                          "totalPages": 1
+                        }
+                        """, JsonCompareMode.STRICT));
+    }
+
+    @Test
+    void getFeedback_ratingFilterWithoutMatches_returnsEmptyPage() throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("rating", "2"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                          "content": [],
+                          "page": 0,
+                          "size": 20,
+                          "totalElements": 0,
+                          "totalPages": 0
+                        }
+                        """, JsonCompareMode.STRICT));
+    }
+
+    @Test
     void getFeedback_courseOfferingWithoutFeedback_returnsEmptyPage() throws Exception {
         // Arrange
         long emptyOfferingId = 900003;
@@ -155,7 +189,10 @@ class CourseOfferingApiIntegrationTest {
             "size=0|size|Size must be at least 1.",
             "size=101|size|Size must not exceed 100.",
             "page=2147483647&size=100|offsetWithinRange|Requested page is too large.",
-            "page=not-a-number|page|Must have a valid format."
+            "page=not-a-number|page|Must have a valid format.",
+            "rating=0|rating|Rating must be at least 1.",
+            "rating=6|rating|Rating must not exceed 5.",
+            "rating=not-a-number|rating|Must have a valid format."
     }, delimiter = '|')
     void getFeedback_invalidPagingParameter_returnsBadRequestProblemDetail(
             String query, String field, String message) throws Exception {

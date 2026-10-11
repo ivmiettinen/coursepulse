@@ -4,6 +4,8 @@ import com.coursepulse.course.CourseOfferingNotFoundException;
 import com.coursepulse.course.CourseOfferingRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,15 +27,17 @@ public class FeedbackService {
             throw new CourseOfferingNotFoundException(courseOfferingId);
         }
 
+        Specification<Feedback> specification = FeedbackSpecifications.hasCourseOfferingId(courseOfferingId);
+        if (query.getRating() != null) {
+            specification = specification.and(FeedbackSpecifications.hasRating(query.getRating()));
+        }
+
         Page<FeedbackDto> feedbackPage = feedbackRepository
-                .findAllByCourseOfferingIdOrderBySubmittedAtDescIdDesc(
-                        courseOfferingId, PageRequest.of(query.getPage(), query.getSize()))
+                .findAll(specification, PageRequest.of(query.getPage(), query.getSize(),
+                        Sort.by(Sort.Order.desc("submittedAt"), Sort.Order.desc("id"))))
                 .map(FeedbackMapper::toDto);
 
-
-        return new FeedbackPageDto(feedbackPage.getContent(), feedbackPage.getNumber(), feedbackPage.getSize(),
+    return new FeedbackPageDto(feedbackPage.getContent(), feedbackPage.getNumber(), feedbackPage.getSize(),
                 feedbackPage.getTotalElements(), feedbackPage.getTotalPages());
-
     }
-
 }
