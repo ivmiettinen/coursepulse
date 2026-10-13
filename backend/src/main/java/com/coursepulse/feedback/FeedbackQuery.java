@@ -4,6 +4,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public class FeedbackQuery {
 
@@ -19,6 +20,9 @@ public class FeedbackQuery {
     @Min(value = 1, message = "Rating must be at least {value}.")
     @Max(value = 5, message = "Rating must not exceed {value}.")
     private Integer rating;
+
+    @Size(max = 200, message = "Search must not exceed {max} characters.")
+    private String search;
 
     public Integer getPage() {
         return page;
@@ -42,6 +46,14 @@ public class FeedbackQuery {
 
     public void setRating(Integer rating) {
         this.rating = rating;
+    }
+
+    public String getSearch() {
+        return search;
+    }
+
+    public void setSearch(String search) {
+        this.search = search;
     }
 
     // JPA accepts an int offset even though PageRequest calculates it as a long.

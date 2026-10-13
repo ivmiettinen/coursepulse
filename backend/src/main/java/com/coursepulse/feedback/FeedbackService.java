@@ -31,13 +31,16 @@ public class FeedbackService {
         if (query.getRating() != null) {
             specification = specification.and(FeedbackSpecifications.hasRating(query.getRating()));
         }
+        if (query.getSearch() != null && !query.getSearch().isBlank()) {
+            specification = specification.and(FeedbackSpecifications.commentContains(query.getSearch().strip()));
+        }
 
         Page<FeedbackDto> feedbackPage = feedbackRepository
                 .findAll(specification, PageRequest.of(query.getPage(), query.getSize(),
                         Sort.by(Sort.Order.desc("submittedAt"), Sort.Order.desc("id"))))
                 .map(FeedbackMapper::toDto);
 
-    return new FeedbackPageDto(feedbackPage.getContent(), feedbackPage.getNumber(), feedbackPage.getSize(),
+        return new FeedbackPageDto(feedbackPage.getContent(), feedbackPage.getNumber(), feedbackPage.getSize(),
                 feedbackPage.getTotalElements(), feedbackPage.getTotalPages());
     }
 }

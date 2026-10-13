@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlMergeMode;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -150,6 +151,119 @@ class CourseOfferingApiIntegrationTest {
                           "totalPages": 0
                         }
                         """, JsonCompareMode.STRICT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"clear", "CLEAR", "  Clear  "})
+    void getFeedback_search_returnsCaseInsensitiveCommentMatches(String search) throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("search", search))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(900002))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ÄÄNI", "ääni"})
+    @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
+    @Sql("/sql/feedback-search-finnish-case-data.sql")
+    void getFeedback_finnishSearch_matchesCommentsRegardlessOfCase(String search) throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("search", search))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(900006))
+                .andExpect(jsonPath("$.content[1].id").value(900005))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "   "})
+    void getFeedback_blankSearch_returnsUnfilteredPage(String search) throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("search", search))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(3))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.content[0].comment").value(nullValue()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"5,1", "3,0"})
+    void getFeedback_searchWithRating_combinesBothFilters(int rating, int expectedCount) throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001)
+                        .queryParam("search", "clear").queryParam("rating", Integer.toString(rating)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(expectedCount))
+                .andExpect(jsonPath("$.totalElements").value(expectedCount))
+                .andExpect(jsonPath("$.totalPages").value(expectedCount));
+    }
+
+    @Test
+    @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
+    @Sql("/sql/feedback-search-rating-page-data.sql")
+    void getFeedback_searchAndRatingWithPaging_returnsSecondPageAndFilteredTotal() throws Exception {
+        // Three rows match both filters; other rows match only one filter or belong to another offering.
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001)
+                        .queryParam("search", "clear")
+                        .queryParam("rating", "5")
+                        .queryParam("page", "1")
+                        .queryParam("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                          "content": [
+                            {
+                              "id": 900002,
+                              "rating": 5,
+                              "comment": "Clear lectures and useful exercises.",
+                              "submittedAt": "2026-09-25T12:00:00Z"
+                            }
+                          ],
+                          "page": 1,
+                          "size": 1,
+                          "totalElements": 3,
+                          "totalPages": 3
+                        }
+                        """, JsonCompareMode.STRICT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"no matching text", "' OR 1=1 --", "<img src=x onerror=alert(1)>"})
+    void getFeedback_searchWithoutMatches_returnsEmptyPage(String search) throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("search", search))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.totalPages").value(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"%", "_", "!", "100%", "part_1", "great!"})
+    @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
+    @Sql("/sql/feedback-search-special-characters-data.sql")
+    void getFeedback_searchSpecialCharacters_matchesLiteralText(String search) throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("search", search))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(900005))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void getFeedback_searchAtMaximumLength_returnsOk() throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("search", "a".repeat(200)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void getFeedback_searchExceedingMaximumLength_returnsBadRequestProblemDetail() throws Exception {
+        mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("search", "a".repeat(201)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errors[0].field").value("search"))
+                .andExpect(jsonPath("$.errors[0].message").value("Search must not exceed 200 characters."))
+                .andExpect(jsonPath("$.exception").doesNotExist())
+                .andExpect(jsonPath("$.trace").doesNotExist());
     }
 
     @Test
