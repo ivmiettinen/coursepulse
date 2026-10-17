@@ -171,8 +171,8 @@ class CourseOfferingApiIntegrationTest {
         mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("search", search))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(2))
-                .andExpect(jsonPath("$.content[0].id").value(900006))
-                .andExpect(jsonPath("$.content[1].id").value(900005))
+                .andExpect(jsonPath("$.content[0].id").value(900011))
+                .andExpect(jsonPath("$.content[1].id").value(900010))
                 .andExpect(jsonPath("$.totalElements").value(2));
     }
 
@@ -244,7 +244,7 @@ class CourseOfferingApiIntegrationTest {
         mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("search", search))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
-                .andExpect(jsonPath("$.content[0].id").value(900005))
+                .andExpect(jsonPath("$.content[0].id").value(900012))
                 .andExpect(jsonPath("$.totalElements").value(1));
     }
 

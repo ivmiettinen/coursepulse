@@ -37,10 +37,22 @@ public class FeedbackService {
 
         Page<FeedbackDto> feedbackPage = feedbackRepository
                 .findAll(specification, PageRequest.of(query.getPage(), query.getSize(),
-                        Sort.by(Sort.Order.desc("submittedAt"), Sort.Order.desc("id"))))
+                        createSort(query.getSort())))
                 .map(FeedbackMapper::toDto);
 
         return new FeedbackPageDto(feedbackPage.getContent(), feedbackPage.getNumber(), feedbackPage.getSize(),
                 feedbackPage.getTotalElements(), feedbackPage.getTotalPages());
+    }
+
+    private Sort createSort(String requestedSort) {
+        Sort sort = switch (requestedSort) {
+            case "submittedAt,asc" -> Sort.by(Sort.Order.asc("submittedAt"));
+            case "submittedAt,desc" -> Sort.by(Sort.Order.desc("submittedAt"));
+            case "rating,asc" -> Sort.by(Sort.Order.asc("rating"), Sort.Order.desc("submittedAt"));
+            case "rating,desc" -> Sort.by(Sort.Order.desc("rating"), Sort.Order.desc("submittedAt"));
+            default -> throw new IllegalArgumentException("Unsupported feedback sort.");
+        };
+        // A unique final sort key keeps equal ratings and timestamps in a deterministic order.
+        return sort.and(Sort.by(Sort.Order.desc("id")));
     }
 }

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class FeedbackQuery {
@@ -23,6 +24,11 @@ public class FeedbackQuery {
 
     @Size(max = 200, message = "Search must not exceed {max} characters.")
     private String search;
+
+    @NotNull(message = "Sort is required.")
+    @Pattern(regexp = "(submittedAt|rating),(asc|desc)",
+            message = "Sort must be submittedAt,asc; submittedAt,desc; rating,asc; or rating,desc.")
+    private String sort = "submittedAt,desc";
 
     public Integer getPage() {
         return page;
@@ -54,6 +60,14 @@ public class FeedbackQuery {
 
     public void setSearch(String search) {
         this.search = search;
+    }
+
+    public String getSort() {
+        return sort;
+    }
+
+    public void setSort(String sort) {
+        this.sort = sort;
     }
 
     // JPA accepts an int offset even though PageRequest calculates it as a long.
