@@ -19,7 +19,7 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 
 @Entity
-@Table(name = "feedback")
+@Table(name = "course_feedback")
 public class Feedback extends AuditableEntity {
 
     @Id

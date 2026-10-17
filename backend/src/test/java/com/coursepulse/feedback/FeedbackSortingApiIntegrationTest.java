@@ -84,7 +84,7 @@ class FeedbackSortingApiIntegrationTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"", "comment,asc", "id,desc", "rating", "rating,sideways",
-            "rating,desc,submittedAt,asc", "rating,desc; DROP TABLE feedback", "courseOffering.id,asc"})
+            "rating,desc,submittedAt,asc", "rating,desc; DROP TABLE course_feedback", "courseOffering.id,asc"})
     void getFeedback_invalidSort_returnsBadRequestProblemDetail(String sort) throws Exception {
         // Act and assert
         mockMvc.perform(get("/api/course-offerings/{id}/feedback", 900001).queryParam("sort", sort))
