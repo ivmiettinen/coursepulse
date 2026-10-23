@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/course-offerings/{id}/feedback")
+@RequestMapping("/api/course-offerings/{id}")
 public class FeedbackController {
 
     private final FeedbackService feedbackService;
@@ -17,8 +17,14 @@ public class FeedbackController {
         this.feedbackService = feedbackService;
     }
 
-    @GetMapping
+    @GetMapping("/feedback")
     public FeedbackPageDto getFeedback(@PathVariable Long id, @Valid @ModelAttribute FeedbackQuery query) {
         return feedbackService.getFeedback(id, query);
     }
+
+    @GetMapping("/feedback-summary")
+    public FeedbackSummaryDto getFeedbackSummary(@PathVariable Long id) {
+        return feedbackService.getFeedbackSummary(id);
+    }
+
 }

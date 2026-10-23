@@ -9,6 +9,12 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 @Transactional(readOnly = true)
 public class FeedbackService {
@@ -42,6 +48,39 @@ public class FeedbackService {
 
         return new FeedbackPageDto(feedbackPage.getContent(), feedbackPage.getNumber(), feedbackPage.getSize(),
                 feedbackPage.getTotalElements(), feedbackPage.getTotalPages());
+    }
+
+    public FeedbackSummaryDto getFeedbackSummary(Long courseOfferingId) {
+        if (!courseOfferingRepository.existsById(courseOfferingId)) {
+            throw new CourseOfferingNotFoundException(courseOfferingId);
+        }
+
+        Map<Integer, Long> countsByRating = feedbackRepository
+                .countByRatingForCourseOffering(courseOfferingId)
+                .stream()
+                .collect(Collectors.toMap(
+                        FeedbackRatingCountDto::rating,
+                        FeedbackRatingCountDto::count));
+
+        List<FeedbackRatingCountDto> ratingDistribution = new ArrayList<>();
+        long totalFeedback = 0;
+        long ratingSum = 0;
+        // Include all ratings from 1 to 5; use zero when this course offering has no feedback with that rating.
+        for (int rating = 1; rating <= 5; rating++) {
+            long count = countsByRating.getOrDefault(rating, 0L);
+            ratingDistribution.add(new FeedbackRatingCountDto(rating, count));
+            totalFeedback += count;
+            ratingSum += rating * count;
+        }
+
+        Double averageRating = null;
+
+        if(totalFeedback > 0 ) {
+            double weightedRatingSum = ratingSum;
+            averageRating = weightedRatingSum / totalFeedback;
+        }
+
+        return new FeedbackSummaryDto(totalFeedback, averageRating, List.copyOf(ratingDistribution));
     }
 
     private Sort createSort(String requestedSort) {
