@@ -64,7 +64,8 @@
               "buildTarget": "coursepulse:build:production"
             },
             "development": {
-              "buildTarget": "coursepulse:build:development"
+              "buildTarget": "coursepulse:build:development",
+              "proxyConfig": "proxy.conf.dev.json"
             }
           },
           "defaultConfiguration": "development"
