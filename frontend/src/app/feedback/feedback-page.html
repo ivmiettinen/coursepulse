@@ -1,0 +1,37 @@
+@let page = state();
+@switch (page.status) {
+  @case ('loading') {
+    <section class="state-panel" aria-labelledby="loading-title" aria-busy="true">
+      <h1 id="loading-title">Course details</h1>
+      <p role="status">Loading course details…</p>
+      <mat-progress-bar mode="indeterminate" aria-label="Loading course details" />
+    </section>
+  }
+  @case ('error') {
+    <section class="state-panel" aria-labelledby="error-title">
+      <h1 id="error-title">Unable to load course details</h1>
+      <p role="alert">{{ page.message }}</p>
+      <button mat-flat-button type="button" (click)="retry()">Try again</button>
+    </section>
+  }
+  @case ('ready') {
+    <header>
+      <p class="page-label">Course feedback</p>
+      <h1>{{ page.offering.courseName }}</h1>
+      <dl class="offering-details">
+        <div>
+          <dt>Course code</dt>
+          <dd class="course-code">{{ page.offering.courseCode }}</dd>
+        </div>
+        <div>
+          <dt>Academic year</dt>
+          <dd>{{ page.offering.academicYear }}</dd>
+        </div>
+        <div>
+          <dt>Period</dt>
+          <dd>{{ page.offering.period }}</dd>
+        </div>
+      </dl>
+    </header>
+  }
+}

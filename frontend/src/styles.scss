@@ -1,5 +1,20 @@
 @use '@angular/material' as mat;
 
+:root {
+  --cp-primary-text-color: #30263a;
+  --cp-secondary-text-color: #62596b;
+  --cp-surface: #fff;
+  --cp-border: #e6e0ef;
+  --cp-highlight-text-color: #58368c;
+  --cp-brand-background-color: #6b42a1;
+  --cp-highlight-background-color: #eee6f7;
+  --cp-brand-text-color: #37224f;
+  --cp-brand-mark-text-color: #fff;
+  --cp-panel-shadow-color: #38244c05;
+  --cp-page-background-color: #f8f6fb;
+  --cp-focus-outline-color: #6740a2;
+}
+
 html {
   @include mat.theme(
     (
@@ -13,8 +28,8 @@ html {
   );
   color-scheme: light;
   font-family: Arial, sans-serif;
-  color: #30263a;
-  background: #f8f6fb;
+  color: var(--cp-primary-text-color);
+  background: var(--cp-page-background-color);
 }
 body {
   margin: 0;
@@ -26,6 +41,6 @@ body {
   box-sizing: border-box;
 }
 :focus-visible {
-  outline: 3px solid #6740a2;
+  outline: 3px solid var(--cp-focus-outline-color);
   outline-offset: 4px;
 }
