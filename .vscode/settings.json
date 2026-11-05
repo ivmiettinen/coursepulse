@@ -1,0 +1,18 @@
+{
+  "editor.formatOnSave": false,
+  "editor.formatOnPaste": false,
+  "editor.formatOnType": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "never"
+  },
+  "eslint.run": "onType",
+  "eslint.workingDirectories": [{ "directory": "frontend" }],
+  "eslint.validate": ["typescript", "html", "angular-html"],
+  "[typescript][javascript][javascriptreact][typescriptreact][html][angular-html][scss][css][json][jsonc][markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": false,
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false
+  },
+  "prettier.requireConfig": true
+}

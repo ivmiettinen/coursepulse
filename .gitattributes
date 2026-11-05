@@ -1,0 +1,2 @@
+# Git executes this hook through a POSIX shell, including on Windows.
+.husky/* text eol=lf
