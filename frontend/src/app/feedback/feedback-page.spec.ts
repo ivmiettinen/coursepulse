@@ -3,8 +3,17 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CourseOffering } from '../course/course-offering';
 import { FeedbackPage } from './feedback-page';
+import { FeedbackPageResponse } from './feedback.models';
 
-describe('FeedbackPage course details', () => {
+describe('FeedbackPage', () => {
+  const feedbackUrl = '/api/course-offerings/1/feedback';
+  const emptyPage: FeedbackPageResponse = {
+    content: [],
+    page: 0,
+    size: 20,
+    totalElements: 0,
+    totalPages: 0,
+  };
   const offering: CourseOffering = {
     id: 1,
     courseId: 1,
@@ -30,7 +39,7 @@ describe('FeedbackPage course details', () => {
 
   afterEach(() => httpTesting.verify());
 
-  it('shows a loading state and requests only the course details', () => {
+  it('loads course details before requesting feedback', async () => {
     expect(element.querySelector('[role="status"]')?.textContent).toContain(
       'Loading course details',
     );
@@ -40,6 +49,8 @@ describe('FeedbackPage course details', () => {
     );
     httpTesting.expectNone('/api/course-offerings/1/feedback');
     httpTesting.expectOne({ method: 'GET', url: '/api/course-offerings/1' }).flush(offering);
+    await fixture.whenStable();
+    httpTesting.expectOne(feedbackUrl).flush(emptyPage);
   });
 
   it('renders the course name, code, academic year and period from the response', async () => {
@@ -52,6 +63,8 @@ describe('FeedbackPage course details', () => {
       offering.academicYear,
       offering.period,
     ]);
+    httpTesting.expectOne(feedbackUrl).flush(emptyPage);
+    await fixture.whenStable();
     expect(element.querySelector('[aria-busy="true"]')).toBeNull();
     expect(element.querySelector('[role="alert"]')).toBeNull();
 
@@ -113,6 +126,96 @@ describe('FeedbackPage course details', () => {
     await fixture.whenStable();
 
     expect(element.querySelector('h1')?.textContent).toBe(offering.courseName);
+    httpTesting.expectOne(feedbackUrl).flush(emptyPage);
+  });
+
+  async function loadCourseDetails(): Promise<void> {
+    httpTesting.expectOne('/api/course-offerings/1').flush(offering);
+    await fixture.whenStable();
+  }
+
+  it('shows feedback loading independently of the course heading', async () => {
+    await loadCourseDetails();
+    expect(element.querySelector('h1')?.textContent).toBe(offering.courseName);
+    expect(element.querySelector('[role="status"]')?.textContent).toContain('Loading feedback');
+    expect(element.querySelector('app-feedback-list [aria-busy="true"]')).not.toBeNull();
+    httpTesting.expectOne({ method: 'GET', url: feedbackUrl }).flush(emptyPage);
+  });
+
+  it('renders feedback in API order, a null comment and a UTC submission date', async () => {
+    await loadCourseDetails();
+    const comment = '<strong>Useful exercises</strong>\nClear examples.';
+    httpTesting.expectOne(feedbackUrl).flush({
+      ...emptyPage,
+      content: [
+        { id: 12, rating: 4, comment, submittedAt: '2026-10-28T23:30:00Z' },
+        { id: 11, rating: 2, comment: null, submittedAt: '2026-10-27T09:00:00Z' },
+      ],
+      totalElements: 23,
+      totalPages: 2,
+    } satisfies FeedbackPageResponse);
+    await fixture.whenStable();
+
+    const rows = element.querySelectorAll('tbody tr');
+    expect(rows.length).toBe(2);
+    expect(rows[0].querySelector('td')?.textContent).toBe('4 / 5');
+    expect(rows[0].querySelector('.comment')?.textContent).toBe(comment);
+    expect(rows[0].querySelector('.comment strong')).toBeNull();
+    expect(rows[1].querySelector('.comment')?.textContent).toBe('No comment provided.');
+    expect(rows[0].querySelector('time')?.textContent).toBe('Oct 28, 2026');
+    expect(rows[0].querySelector('time')?.getAttribute('datetime')).toBe('2026-10-28T23:30:00Z');
+    expect(element.querySelector('[role="status"]')?.textContent).toContain('Showing 2 of 23');
+    expect(element.querySelector('caption')?.textContent).toContain('UTC');
+    httpTesting.expectNone('/api/course-offerings/1');
+  });
+
+  it('shows an empty state instead of an empty table', async () => {
+    await loadCourseDetails();
+    httpTesting.expectOne(feedbackUrl).flush(emptyPage);
+    await fixture.whenStable();
+    expect(element.querySelector('[role="status"]')?.textContent).toContain('No feedback yet');
+    expect(element.querySelector('table')).toBeNull();
+    expect(element.querySelector('[aria-busy="true"]')).toBeNull();
+  });
+
+  it.each(['server', 'network', 'not-found'])(
+    'retries feedback after repeated %s errors without reloading course details',
+    async (failure) => {
+      await loadCourseDetails();
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const request = httpTesting.expectOne(feedbackUrl);
+        if (failure === 'network') {
+          request.error(new ProgressEvent('error'));
+        } else {
+          request.flush(null, {
+            status: failure === 'not-found' ? 404 : 503,
+            statusText: failure === 'not-found' ? 'Not Found' : 'Service Unavailable',
+          });
+        }
+        await fixture.whenStable();
+        expect(element.querySelector('[role="alert"]')?.textContent).toBe(
+          failure === 'not-found'
+            ? 'This course offering could not be found.'
+            : 'We could not load the feedback. Please try again.',
+        );
+        expect(element.querySelector('h1')?.textContent).toBe(offering.courseName);
+        element.querySelector<HTMLButtonElement>('app-feedback-list button')!.click();
+        await fixture.whenStable();
+        expect(element.querySelector('[role="status"]')?.textContent).toContain('Loading feedback');
+        expect(element.querySelector('[role="alert"]')).toBeNull();
+        httpTesting.expectNone('/api/course-offerings/1');
+      }
+      httpTesting.expectOne(feedbackUrl).flush(emptyPage);
+      await fixture.whenStable();
+      expect(element.querySelector('[role="status"]')?.textContent).toContain('No feedback yet');
+    },
+  );
+
+  it('cancels feedback loading when the page is destroyed', async () => {
+    await loadCourseDetails();
+    const request = httpTesting.expectOne(feedbackUrl);
+    fixture.destroy();
+    expect(request.cancelled).toBe(true);
   });
 
   it('cancels an in-flight request when the page is destroyed', () => {

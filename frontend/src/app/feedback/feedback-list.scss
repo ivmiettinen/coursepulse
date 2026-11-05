@@ -1,0 +1,54 @@
+:host {
+  display: block;
+  margin-top: 2rem;
+}
+
+section {
+  padding: clamp(0.75rem, 3vw, 2rem);
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 0.85rem;
+  box-shadow: 0 3px 12px var(--cp-panel-shadow-color);
+}
+
+h2 {
+  margin-top: 0;
+}
+
+table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+caption {
+  text-align: left;
+  color: var(--cp-secondary-text-color);
+  padding-bottom: 0.75rem;
+}
+
+th,
+td {
+  padding: 0.75rem clamp(0.25rem, 1vw, 0.75rem);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--cp-border);
+  overflow-wrap: anywhere;
+}
+
+th:first-child {
+  width: 18%;
+}
+
+th:last-child {
+  width: 25%;
+}
+
+.comment {
+  white-space: pre-wrap;
+}
+
+.missing-comment {
+  color: var(--cp-secondary-text-color);
+  font-style: italic;
+}

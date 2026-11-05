@@ -6,6 +6,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { catchError, map, of, startWith, Subject, switchMap } from 'rxjs';
 import { CourseOffering } from '../course/course-offering';
 import { CourseOfferingApi } from '../course/course-offering-api';
+import { FeedbackList } from './feedback-list';
 
 // Load this demo course offering by default; course selection will come later.
 const DEMO_COURSE_OFFERING_ID = 1;
@@ -17,7 +18,7 @@ type CourseOfferingState =
 
 @Component({
   selector: 'app-feedback-page',
-  imports: [MatButtonModule, MatProgressBarModule],
+  imports: [MatButtonModule, MatProgressBarModule, FeedbackList],
   templateUrl: './feedback-page.html',
   styleUrl: './feedback-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,7 +30,7 @@ export class FeedbackPage {
   protected readonly state = toSignal(
     this.loadCourseOffering.pipe(
       // Load when the page opens, then again only on explicit retry.
-      startWith(undefined),
+      startWith(null),
       switchMap(() =>
         this.courseOfferingApi.getCourseOffering(DEMO_COURSE_OFFERING_ID).pipe(
           map((offering): CourseOfferingState => ({ status: 'ready', offering })),

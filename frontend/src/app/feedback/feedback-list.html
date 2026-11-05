@@ -1,0 +1,53 @@
+@let result = state();
+<section aria-labelledby="feedback-title" [attr.aria-busy]="result.status === 'loading'">
+  <h2 id="feedback-title">Feedback</h2>
+  @switch (result.status) {
+    @case ('loading') {
+      <p role="status">Loading feedback…</p>
+      <mat-progress-bar mode="indeterminate" aria-label="Loading feedback" />
+    }
+    @case ('error') {
+      <p role="alert">{{ result.message }}</p>
+      <button mat-flat-button type="button" (click)="retry()">Try again</button>
+    }
+    @case ('ready') {
+      @if (result.page.content.length === 0) {
+        <p role="status">No feedback yet for this course offering.</p>
+      } @else {
+        <p role="status">
+          Showing {{ result.page.content.length }} of {{ result.page.totalElements }} feedback
+          entries. Newest first.
+        </p>
+        <table>
+          <caption>
+            Course offering feedback — submission dates in UTC
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Rating</th>
+              <th scope="col">Comment</th>
+              <th scope="col">Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (feedback of result.page.content; track feedback.id) {
+              <tr>
+                <td>{{ feedback.rating }} / 5</td>
+                <td
+                  class="comment"
+                  [class.missing-comment]="feedback.comment === null"
+                  [textContent]="feedback.comment ?? 'No comment provided.'"
+                ></td>
+                <td>
+                  <time [attr.datetime]="feedback.submittedAt">{{
+                    feedback.submittedAt | date: 'mediumDate' : 'UTC'
+                  }}</time>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  }
+</section>

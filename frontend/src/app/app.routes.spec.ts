@@ -32,6 +32,9 @@ describe('Application routes', () => {
       .expectOne({ method: 'GET', url: '/api/course-offerings/1' })
       .flush(offering);
     await harness.fixture.whenStable();
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/course-offerings/1/feedback')
+      .flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
 
     expect(TestBed.inject(Router).url).toBe('/feedback');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe(offering.courseName);
