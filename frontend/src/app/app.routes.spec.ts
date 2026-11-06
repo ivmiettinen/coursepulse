@@ -33,7 +33,7 @@ describe('Application routes', () => {
       .flush(offering);
     await harness.fixture.whenStable();
     TestBed.inject(HttpTestingController)
-      .expectOne('/api/course-offerings/1/feedback')
+      .expectOne('/api/course-offerings/1/feedback?page=0&size=20')
       .flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
 
     expect(TestBed.inject(Router).url).toBe('/feedback');

@@ -1,12 +1,14 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { MatPaginatorHarness } from '@angular/material/paginator/testing';
 import { CourseOffering } from '../course/course-offering';
 import { FeedbackPage } from './feedback-page';
 import { FeedbackPageResponse } from './feedback.models';
 
 describe('FeedbackPage', () => {
-  const feedbackUrl = '/api/course-offerings/1/feedback';
+  const feedbackUrl = '/api/course-offerings/1/feedback?page=0&size=20';
   const emptyPage: FeedbackPageResponse = {
     content: [],
     page: 0,
@@ -14,6 +16,9 @@ describe('FeedbackPage', () => {
     totalElements: 0,
     totalPages: 0,
   };
+  const feedback = (id: number) => ({
+    id, rating: 5, comment: null, submittedAt: '2026-10-28T10:00:00Z',
+  });
   const offering: CourseOffering = {
     id: 1,
     courseId: 1,
@@ -47,7 +52,7 @@ describe('FeedbackPage', () => {
     expect(element.querySelector('mat-progress-bar')?.getAttribute('aria-label')).toBe(
       'Loading course details',
     );
-    httpTesting.expectNone('/api/course-offerings/1/feedback');
+    httpTesting.expectNone('/api/course-offerings/1/feedback?page=0&size=20');
     httpTesting.expectOne({ method: 'GET', url: '/api/course-offerings/1' }).flush(offering);
     await fixture.whenStable();
     httpTesting.expectOne(feedbackUrl).flush(emptyPage);
@@ -134,6 +139,32 @@ describe('FeedbackPage', () => {
     await fixture.whenStable();
   }
 
+  async function loadPaginatedFeedback(): Promise<MatPaginatorHarness> {
+    await loadCourseDetails();
+    httpTesting.expectOne(feedbackUrl).flush({
+      ...emptyPage, totalElements: 43, totalPages: 3,
+      content: Array.from({ length: 20 }, (_, index) => feedback(index + 1)),
+    });
+    return TestbedHarnessEnvironment.loader(fixture).getHarness(MatPaginatorHarness);
+  }
+
+  it('uses the total count to navigate between page bounds', async () => {
+    const paginator = await loadPaginatedFeedback();
+    expect(await paginator.getPageSize()).toBe(20);
+    expect(await paginator.getRangeLabel()).toBe('1 – 20 of 43');
+    expect(await paginator.isPreviousPageDisabled()).toBe(true);
+    await paginator.goToLastPage();
+    httpTesting.expectOne('/api/course-offerings/1/feedback?page=2&size=20').flush({
+      ...emptyPage, page: 2, totalElements: 43, totalPages: 3,
+      content: [41, 42, 43].map(feedback),
+    });
+    await fixture.whenStable();
+    expect(element.querySelector('[role="status"]')?.textContent).toContain('Showing 41–43 of 43');
+    expect(await paginator.isNextPageDisabled()).toBe(true);
+    httpTesting.expectNone('/api/course-offerings/1');
+  });
+
+
   it('shows feedback loading independently of the course heading', async () => {
     await loadCourseDetails();
     expect(element.querySelector('h1')?.textContent).toBe(offering.courseName);
@@ -164,7 +195,7 @@ describe('FeedbackPage', () => {
     expect(rows[1].querySelector('.comment')?.textContent).toBe('No comment provided.');
     expect(rows[0].querySelector('time')?.textContent).toBe('Oct 28, 2026');
     expect(rows[0].querySelector('time')?.getAttribute('datetime')).toBe('2026-10-28T23:30:00Z');
-    expect(element.querySelector('[role="status"]')?.textContent).toContain('Showing 2 of 23');
+    expect(element.querySelector('[role="status"]')?.textContent).toContain('Showing 1–2 of 23');
     expect(element.querySelector('caption')?.textContent).toContain('UTC');
     httpTesting.expectNone('/api/course-offerings/1');
   });

@@ -15,7 +15,7 @@
         <p role="status">No feedback yet for this course offering.</p>
       } @else {
         <p role="status">
-          Showing {{ result.page.content.length }} of {{ result.page.totalElements }} feedback
+          Showing {{ result.page.page * result.page.size + 1 }}–{{ result.page.page * result.page.size + result.page.content.length }} of {{ result.page.totalElements }} feedback
           entries. Newest first.
         </p>
         <table>
@@ -50,4 +50,13 @@
       }
     }
   }
+  <mat-paginator
+    aria-label="Feedback pagination"
+    [length]="feedbackTotalCount()"
+    [pageIndex]="selectedPagination().page"
+    [pageSize]="selectedPagination().size"
+    [pageSizeOptions]="[10, 20, 50]"
+    showFirstLastButtons
+    (page)="changePage($event)"
+  />
 </section>

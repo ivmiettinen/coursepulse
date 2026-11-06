@@ -7,10 +7,10 @@ import { FeedbackPageResponse } from './feedback.models';
 export class FeedbackApi {
   private readonly http = inject(HttpClient);
 
-  getFeedback(courseOfferingId: number): Observable<FeedbackPageResponse> {
-    // The backend defaults to the first 20 entries, newest first.
+  getFeedback(courseOfferingId: number, page = 0, size = 20): Observable<FeedbackPageResponse> {
     return this.http.get<FeedbackPageResponse>(
       `/api/course-offerings/${courseOfferingId}/feedback`,
+      { params: { page, size } },
     );
   }
 }

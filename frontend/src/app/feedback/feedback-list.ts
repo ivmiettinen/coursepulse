@@ -1,10 +1,11 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { catchError, combineLatest, map, of, startWith, Subject, switchMap } from 'rxjs';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { BehaviorSubject, catchError, combineLatest, map, of, startWith, Subject, switchMap, tap } from 'rxjs';
 import { FeedbackApi } from './feedback-api';
 import { FeedbackPageResponse } from './feedback.models';
 
@@ -15,7 +16,7 @@ type FeedbackState =
 
 @Component({
   selector: 'app-feedback-list',
-  imports: [DatePipe, MatButtonModule, MatProgressBarModule],
+  imports: [DatePipe, MatButtonModule, MatProgressBarModule, MatPaginatorModule],
   templateUrl: './feedback-list.html',
   styleUrl: './feedback-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,15 +26,21 @@ export class FeedbackList {
 
   private readonly feedbackApi = inject(FeedbackApi);
   private readonly reload = new Subject<void>();
+  // Backend page indexes start at 0, so page 0 is the first page.
+  private readonly pagination = new BehaviorSubject({ page: 0, size: 20 });
+  protected readonly selectedPagination = toSignal(this.pagination, { requireSync: true });
+  protected readonly feedbackTotalCount = signal(0);
 
   // The parent supplies the offering ID; retries affect only this list.
   protected readonly state = toSignal(
-    combineLatest([
-      toObservable(this.courseOfferingId),
-      this.reload.pipe(startWith(null)),
-    ]).pipe(
-      switchMap(([id]) =>
-        this.feedbackApi.getFeedback(id).pipe(
+    combineLatest({
+      id: toObservable(this.courseOfferingId),
+      retry: this.reload.pipe(startWith(null)),
+      pagination: this.pagination,
+    }).pipe(
+      switchMap(({ id, pagination }) =>
+        this.feedbackApi.getFeedback(id, pagination.page, pagination.size).pipe(
+          tap((page) => this.feedbackTotalCount.set(page.totalElements)),
           map((page): FeedbackState => ({ status: 'ready', page })),
           catchError((error: unknown) =>
             of<FeedbackState>({
@@ -54,5 +61,12 @@ export class FeedbackList {
 
   protected retry(): void {
     this.reload.next();
+  }
+
+  protected changePage(event: PageEvent): void {
+    this.pagination.next({
+      page: event.pageSize === this.selectedPagination().size ? event.pageIndex : 0,
+      size: event.pageSize,
+    });
   }
 }
