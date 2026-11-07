@@ -7,7 +7,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { BehaviorSubject, catchError, combineLatest, map, of, startWith, Subject, switchMap, tap } from 'rxjs';
 import { FeedbackApi } from './feedback-api';
-import { FeedbackPageResponse } from './feedback.models';
+import { FeedbackFilterBar } from './feedback-filter-bar';
+import { FeedbackFilters, FeedbackPageResponse } from './feedback.models';
 
 type FeedbackState =
   | { status: 'loading' }
@@ -16,7 +17,7 @@ type FeedbackState =
 
 @Component({
   selector: 'app-feedback-list',
-  imports: [DatePipe, MatButtonModule, MatProgressBarModule, MatPaginatorModule],
+  imports: [DatePipe, MatButtonModule, MatProgressBarModule, MatPaginatorModule, FeedbackFilterBar],
   templateUrl: './feedback-list.html',
   styleUrl: './feedback-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,20 +28,28 @@ export class FeedbackList {
   private readonly feedbackApi = inject(FeedbackApi);
   private readonly reload = new Subject<void>();
   // Backend page indexes start at 0, so page 0 is the first page.
-  private readonly pagination = new BehaviorSubject({ page: 0, size: 20 });
-  protected readonly selectedPagination = toSignal(this.pagination, { requireSync: true });
+  private readonly feedbackQuery = new BehaviorSubject<FeedbackFilters & { page: number; size: number }>({
+    page: 0, size: 20, search: '', rating: null,
+  });
+  protected readonly selectedFeedbackQuery = toSignal(this.feedbackQuery, { requireSync: true });
   protected readonly feedbackTotalCount = signal(0);
+  protected readonly displayedResult = signal<{ page: FeedbackPageResponse; isFiltered: boolean } | null>(null);
 
   // The parent supplies the offering ID; retries affect only this list.
   protected readonly state = toSignal(
     combineLatest({
       id: toObservable(this.courseOfferingId),
       retry: this.reload.pipe(startWith(null)),
-      pagination: this.pagination,
+      feedbackQuery: this.feedbackQuery,
     }).pipe(
-      switchMap(({ id, pagination }) =>
-        this.feedbackApi.getFeedback(id, pagination.page, pagination.size).pipe(
-          tap((page) => this.feedbackTotalCount.set(page.totalElements)),
+      switchMap(({ id, feedbackQuery }) =>
+        this.feedbackApi.getFeedback(id, feedbackQuery).pipe(
+          tap((page) => {
+            const isFiltered = feedbackQuery.search.trim().length > 0
+              || feedbackQuery.rating !== null;
+            this.feedbackTotalCount.set(page.totalElements);
+            this.displayedResult.set({ page, isFiltered });
+          }),
           map((page): FeedbackState => ({ status: 'ready', page })),
           catchError((error: unknown) =>
             of<FeedbackState>({
@@ -64,9 +73,14 @@ export class FeedbackList {
   }
 
   protected changePage(event: PageEvent): void {
-    this.pagination.next({
-      page: event.pageSize === this.selectedPagination().size ? event.pageIndex : 0,
+    this.feedbackQuery.next({
+      ...this.selectedFeedbackQuery(),
+      page: event.pageSize === this.selectedFeedbackQuery().size ? event.pageIndex : 0,
       size: event.pageSize,
     });
+  }
+
+  protected applyFilters(filters: FeedbackFilters): void {
+    this.feedbackQuery.next({ ...this.selectedFeedbackQuery(), ...filters, page: 0 });
   }
 }

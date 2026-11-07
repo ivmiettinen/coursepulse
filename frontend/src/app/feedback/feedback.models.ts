@@ -15,3 +15,17 @@ export interface Feedback {
   // JSON represents the backend's Instant as an ISO 8601 string
   readonly submittedAt: string;
 }
+
+export type FeedbackRating = 1 | 2 | 3 | 4 | 5;
+
+export interface FeedbackFilters {
+  readonly search: string;
+  readonly rating: FeedbackRating | null;
+}
+
+export interface FeedbackQuery {
+  readonly page?: number;
+  readonly size?: number;
+  readonly search?: string;
+  readonly rating?: FeedbackRating | null;
+}

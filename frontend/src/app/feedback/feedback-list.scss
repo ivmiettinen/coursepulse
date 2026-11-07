@@ -15,6 +15,20 @@ h2 {
   margin-top: 0;
 }
 
+.sort-description {
+  color: var(--cp-secondary-text-color);
+  margin-bottom: 0.5rem;
+}
+
+.loading-indicator {
+  min-height: 1rem;
+
+  .loading-message {
+    margin: 0 0 0.5rem;
+    color: var(--cp-secondary-text-color);
+  }
+}
+
 table {
   width: 100%;
   table-layout: fixed;

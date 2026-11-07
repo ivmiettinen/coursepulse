@@ -20,7 +20,7 @@ describe('FeedbackApi', () => {
   afterEach(() => httpTesting.verify());
 
   it('sends the selected zero-based page and page size', async () => {
-    const result = firstValueFrom(api.getFeedback(123, 2, 10));
+    const result = firstValueFrom(api.getFeedback(123, { page: 2, size: 10 }));
     const request = httpTesting.expectOne({
       method: 'GET', url: '/api/course-offerings/123/feedback?page=2&size=10',
     });

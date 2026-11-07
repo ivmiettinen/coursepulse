@@ -1,60 +1,74 @@
 @let result = state();
 <section aria-labelledby="feedback-title" [attr.aria-busy]="result.status === 'loading'">
   <h2 id="feedback-title">Feedback</h2>
-  @switch (result.status) {
-    @case ('loading') {
-      <p role="status">Loading feedback…</p>
-      <mat-progress-bar mode="indeterminate" aria-label="Loading feedback" />
-    }
-    @case ('error') {
-      <p role="alert">{{ result.message }}</p>
-      <button mat-flat-button type="button" (click)="retry()">Try again</button>
-    }
-    @case ('ready') {
-      @if (result.page.content.length === 0) {
-        <p role="status">No feedback yet for this course offering.</p>
-      } @else {
-        <p role="status">
-          Showing {{ result.page.page * result.page.size + 1 }}–{{ result.page.page * result.page.size + result.page.content.length }} of {{ result.page.totalElements }} feedback
-          entries. Newest first.
-        </p>
-        <table>
-          <caption>
-            Course offering feedback — submission dates in UTC
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Rating</th>
-              <th scope="col">Comment</th>
-              <th scope="col">Submitted</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (feedback of result.page.content; track feedback.id) {
-              <tr>
-                <td>{{ feedback.rating }} / 5</td>
-                <td
-                  class="comment"
-                  [class.missing-comment]="feedback.comment === null"
-                  [textContent]="feedback.comment ?? 'No comment provided.'"
-                ></td>
-                <td>
-                  <time [attr.datetime]="feedback.submittedAt">{{
-                    feedback.submittedAt | date: 'mediumDate' : 'UTC'
-                  }}</time>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+  <app-feedback-filter-bar (filtersChange)="applyFilters($event)" />
+  <div class="loading-indicator">
+    @switch (result.status) {
+      @case ('loading') {
+        @if (!displayedResult()) {
+          <p class="loading-message" role="status">Loading feedback…</p>
+          <mat-progress-bar mode="indeterminate" aria-label="Loading feedback" />
+        }
       }
+      @case ('error') {
+        <p role="alert">{{ result.message }}</p>
+        @if (displayedResult()) {
+          <p>Previous results are shown. They may not match the current filters or page.</p>
+        }
+        <button mat-flat-button type="button" (click)="retry()">Try again</button>
+      }
+    }
+  </div>
+  @if (displayedResult(); as displayed) {
+    @if (displayed.page.content.length === 0) {
+      <p role="status">
+        @if (displayed.isFiltered) {
+          No feedback matches these filters.
+        } @else {
+          No feedback yet for this course offering.
+        }
+      </p>
+    } @else {
+      <p role="status">
+        Showing {{ displayed.page.page * displayed.page.size + 1 }}–{{ displayed.page.page * displayed.page.size + displayed.page.content.length }} of {{ displayed.page.totalElements }} feedback
+        entries. Newest first.
+      </p>
+      <table>
+        <caption>
+          Course offering feedback — submission dates in UTC
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Rating</th>
+            <th scope="col">Comment</th>
+            <th scope="col">Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (feedback of displayed.page.content; track feedback.id) {
+            <tr>
+              <td>{{ feedback.rating }} / 5</td>
+              <td
+                class="comment"
+                [class.missing-comment]="feedback.comment === null"
+                [textContent]="feedback.comment ?? 'No comment provided.'"
+              ></td>
+              <td>
+                <time [attr.datetime]="feedback.submittedAt">{{
+                  feedback.submittedAt | date: 'mediumDate' : 'UTC'
+                }}</time>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     }
   }
   <mat-paginator
     aria-label="Feedback pagination"
     [length]="feedbackTotalCount()"
-    [pageIndex]="selectedPagination().page"
-    [pageSize]="selectedPagination().size"
+    [pageIndex]="selectedFeedbackQuery().page"
+    [pageSize]="selectedFeedbackQuery().size"
     [pageSizeOptions]="[10, 20, 50]"
     showFirstLastButtons
     (page)="changePage($event)"

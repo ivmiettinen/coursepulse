@@ -1,0 +1,15 @@
+<div role="group" aria-label="Feedback filters" [formGroup]="filters">
+  <mat-form-field appearance="outline">
+    <mat-label>Search comments</mat-label>
+    <input matInput type="search" formControlName="search" maxlength="200" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Rating</mat-label>
+    <mat-select formControlName="rating" [canSelectNullableOptions]="true">
+      <mat-option [value]="null">All ratings</mat-option>
+      @for (rating of ratings; track rating) {
+        <mat-option [value]="rating">{{ rating }} / 5</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
