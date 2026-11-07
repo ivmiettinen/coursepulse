@@ -230,7 +230,7 @@ describe('FeedbackPage', () => {
             : 'We could not load the feedback. Please try again.',
         );
         expect(element.querySelector('h1')?.textContent).toBe(offering.courseName);
-        element.querySelector<HTMLButtonElement>('app-feedback-list button')!.click();
+        element.querySelector<HTMLButtonElement>('app-feedback-list .loading-indicator button')!.click();
         await fixture.whenStable();
         expect(element.querySelector('[role="status"]')?.textContent).toContain('Loading feedback');
         expect(element.querySelector('[role="alert"]')).toBeNull();

@@ -1,14 +1,53 @@
+$stack-filters-at: 34rem;
+$stack-search-at: 24rem;
+
 :host {
   display: block;
+  container-type: inline-size;
 }
 
-div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+.filter-bar {
+  display: grid;
+  gap: 1.25rem;
 }
 
 mat-form-field {
-  flex: 1 1 12rem;
   min-width: 0;
+  width: 100%;
+}
+
+form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem;
+  max-width: 44rem;
+
+  button {
+    margin-top: 0.5rem;
+  }
+}
+
+.filter-options {
+  display: grid;
+  grid-template-columns: minmax(0, 14rem) minmax(0, 18rem);
+  gap: 1rem;
+}
+
+// Place Rating and Sort by on separate rows when space is limited.
+@container (max-width: 34rem) {
+  .filter-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// Place Search below its input when they no longer fit side by side.
+@container (max-width: 24rem) {
+  form {
+    grid-template-columns: minmax(0, 1fr);
+
+    button {
+      margin-top: 0;
+    }
+  }
 }

@@ -4,16 +4,18 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
 import { FeedbackFilters, FeedbackRating, FeedbackSort, feedbackSortLabels } from './feedback.models';
 
 @Component({
   selector: 'app-feedback-filter-bar',
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule],
   templateUrl: './feedback-filter-bar.html',
   styleUrl: './feedback-filter-bar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FeedbackFilterBar {
+  private appliedSearch = '';
   readonly filtersChange = output<FeedbackFilters>();
   readonly sortChange = output<FeedbackSort>();
   protected readonly sortLabels = feedbackSortLabels;
@@ -31,8 +33,13 @@ export class FeedbackFilterBar {
     this.sort.valueChanges.pipe(takeUntilDestroyed()).subscribe((sort) => {
       this.sortChange.emit(sort);
     });
-    this.filters.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
-      this.filtersChange.emit(this.filters.getRawValue());
+    this.filters.controls.rating.valueChanges.pipe(takeUntilDestroyed()).subscribe((rating) => {
+      this.filtersChange.emit({ search: this.appliedSearch, rating });
     });
+  }
+
+  protected submitSearch(): void {
+    this.appliedSearch = this.filters.controls.search.value.trim();
+    this.filtersChange.emit({ search: this.appliedSearch, rating: this.filters.controls.rating.value });
   }
 }
