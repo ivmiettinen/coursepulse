@@ -197,6 +197,14 @@ describe('FeedbackPage', () => {
     expect(rows[0].querySelector('time')?.getAttribute('datetime')).toBe('2026-10-28T23:30:00Z');
     expect(element.querySelector('[role="status"]')?.textContent).toContain('Showing 1–2 of 23');
     expect(element.querySelector('caption')?.textContent).toContain('UTC');
+    const cards = element.querySelectorAll('.feedback-cards li');
+    expect(cards.length).toBe(2);
+    expect(cards[0].textContent).toContain('4 / 5');
+    expect(cards[0].querySelector('.comment')?.textContent).toBe(comment);
+    expect(cards[0].querySelector('.comment strong')).toBeNull();
+    expect(cards[1].querySelector('.comment')?.textContent).toBe('No comment provided.');
+    expect(cards[0].querySelector('time')?.textContent).toMatch(/11:30:00\sPM/);
+    expect(cards[0].querySelector('time')?.getAttribute('datetime')).toBe('2026-10-28T23:30:00Z');
     httpTesting.expectNone('/api/course-offerings/1');
   });
 

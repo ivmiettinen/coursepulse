@@ -33,7 +33,7 @@
         Showing {{ displayed.page.page * displayed.page.size + 1 }}–{{ displayed.page.page * displayed.page.size + displayed.page.content.length }} of {{ displayed.page.totalElements }} feedback
         entries. {{ sortLabels[displayed.sort] }}.
       </p>
-      <table>
+      <table class="feedback-table">
         <caption>
           Course offering feedback — submission dates in UTC
         </caption>
@@ -62,6 +62,24 @@
           }
         </tbody>
       </table>
+      <ul class="feedback-cards" aria-label="Course offering feedback">
+        @for (feedback of displayed.page.content; track feedback.id) {
+          <li>
+            <dl>
+              <div><dt>Rating</dt><dd>{{ feedback.rating }} / 5</dd></div>
+              <div>
+                <dt>Comment</dt>
+                <dd class="comment" [class.missing-comment]="feedback.comment === null"
+                  [textContent]="feedback.comment ?? 'No comment provided.'"></dd>
+              </div>
+              <div>
+                <dt>Submitted (UTC)</dt>
+                <dd><time [attr.datetime]="feedback.submittedAt">{{ feedback.submittedAt | date: 'medium' : 'UTC' }}</time></dd>
+              </div>
+            </dl>
+          </li>
+        }
+      </ul>
     }
   }
   <mat-paginator
