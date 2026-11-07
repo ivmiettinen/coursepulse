@@ -38,6 +38,13 @@ export class FeedbackFilterBar {
     });
   }
 
+  
+  protected clearFilters(): void {
+    this.appliedSearch = '';
+    this.filters.reset({ search: '', rating: null }, { emitEvent: false });
+    this.filtersChange.emit({ search: '', rating: null });
+  }
+
   protected submitSearch(): void {
     this.appliedSearch = this.filters.controls.search.value.trim();
     this.filtersChange.emit({ search: this.appliedSearch, rating: this.filters.controls.rating.value });
