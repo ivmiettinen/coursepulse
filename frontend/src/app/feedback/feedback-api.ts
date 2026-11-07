@@ -12,6 +12,7 @@ export class FeedbackApi {
     const params: Record<string, string | number> = {
       page: query.page ?? 0,
       size: query.size ?? 20,
+      sort: query.sort ?? 'submittedAt,desc',
     };
 
     if (search) params['search'] = search;

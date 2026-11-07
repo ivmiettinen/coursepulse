@@ -18,12 +18,22 @@ export interface Feedback {
 
 export type FeedbackRating = 1 | 2 | 3 | 4 | 5;
 
+export type FeedbackSort = 'submittedAt,desc' | 'submittedAt,asc' | 'rating,desc' | 'rating,asc';
+
+export const feedbackSortLabels: Record<FeedbackSort, string> = {
+  'submittedAt,desc': 'Newest first',
+  'submittedAt,asc': 'Oldest first',
+  'rating,desc': 'Highest rating first',
+  'rating,asc': 'Lowest rating first',
+};
+
 export interface FeedbackFilters {
   readonly search: string;
   readonly rating: FeedbackRating | null;
 }
 
 export interface FeedbackQuery {
+  readonly sort?: FeedbackSort;
   readonly page?: number;
   readonly size?: number;
   readonly search?: string;

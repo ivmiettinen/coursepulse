@@ -8,7 +8,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { BehaviorSubject, catchError, combineLatest, map, of, startWith, Subject, switchMap, tap } from 'rxjs';
 import { FeedbackApi } from './feedback-api';
 import { FeedbackFilterBar } from './feedback-filter-bar';
-import { FeedbackFilters, FeedbackPageResponse } from './feedback.models';
+import { FeedbackFilters, FeedbackPageResponse, FeedbackQuery, FeedbackSort, feedbackSortLabels } from './feedback.models';
 
 type FeedbackState =
   | { status: 'loading' }
@@ -28,12 +28,15 @@ export class FeedbackList {
   private readonly feedbackApi = inject(FeedbackApi);
   private readonly reload = new Subject<void>();
   // Backend page indexes start at 0, so page 0 is the first page.
-  private readonly feedbackQuery = new BehaviorSubject<FeedbackFilters & { page: number; size: number }>({
-    page: 0, size: 20, search: '', rating: null,
+  private readonly feedbackQuery = new BehaviorSubject<Required<FeedbackQuery>>({
+    page: 0, size: 20, search: '', rating: null, sort: 'submittedAt,desc',
   });
   protected readonly selectedFeedbackQuery = toSignal(this.feedbackQuery, { requireSync: true });
   protected readonly feedbackTotalCount = signal(0);
-  protected readonly displayedResult = signal<{ page: FeedbackPageResponse; isFiltered: boolean } | null>(null);
+  protected readonly sortLabels = feedbackSortLabels;
+  protected readonly displayedResult = signal<{
+    page: FeedbackPageResponse; isFiltered: boolean; sort: FeedbackSort;
+  } | null>(null);
 
   // The parent supplies the offering ID; retries affect only this list.
   protected readonly state = toSignal(
@@ -48,7 +51,7 @@ export class FeedbackList {
             const isFiltered = feedbackQuery.search.trim().length > 0
               || feedbackQuery.rating !== null;
             this.feedbackTotalCount.set(page.totalElements);
-            this.displayedResult.set({ page, isFiltered });
+            this.displayedResult.set({ page, isFiltered, sort: feedbackQuery.sort });
           }),
           map((page): FeedbackState => ({ status: 'ready', page })),
           catchError((error: unknown) =>
@@ -82,5 +85,9 @@ export class FeedbackList {
 
   protected applyFilters(filters: FeedbackFilters): void {
     this.feedbackQuery.next({ ...this.selectedFeedbackQuery(), ...filters, page: 0 });
+  }
+
+  protected changeSort(sort: FeedbackSort): void {
+    this.feedbackQuery.next({ ...this.selectedFeedbackQuery(), sort, page: 0 });
   }
 }

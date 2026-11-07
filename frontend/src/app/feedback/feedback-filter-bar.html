@@ -1,4 +1,4 @@
-<div role="group" aria-label="Feedback filters" [formGroup]="filters">
+<div role="group" aria-label="Feedback filters and sorting" [formGroup]="filters">
   <mat-form-field appearance="outline">
     <mat-label>Search comments</mat-label>
     <input matInput type="search" formControlName="search" maxlength="200" />
@@ -9,6 +9,14 @@
       <mat-option [value]="null">All ratings</mat-option>
       @for (rating of ratings; track rating) {
         <mat-option [value]="rating">{{ rating }} / 5</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Sort by</mat-label>
+    <mat-select [formControl]="sort">
+      @for (option of sorts; track option) {
+        <mat-option [value]="option">{{ sortLabels[option] }}</mat-option>
       }
     </mat-select>
   </mat-form-field>

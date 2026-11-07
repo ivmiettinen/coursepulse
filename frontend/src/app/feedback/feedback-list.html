@@ -1,7 +1,7 @@
 @let result = state();
 <section aria-labelledby="feedback-title" [attr.aria-busy]="result.status === 'loading'">
   <h2 id="feedback-title">Feedback</h2>
-  <app-feedback-filter-bar (filtersChange)="applyFilters($event)" />
+  <app-feedback-filter-bar (filtersChange)="applyFilters($event)" (sortChange)="changeSort($event)" />
   <div class="loading-indicator">
     @switch (result.status) {
       @case ('loading') {
@@ -13,7 +13,7 @@
       @case ('error') {
         <p role="alert">{{ result.message }}</p>
         @if (displayedResult()) {
-          <p>Previous results are shown. They may not match the current filters or page.</p>
+          <p>Previous results are shown. They may not match the current filters, sorting or page.</p>
         }
         <button mat-flat-button type="button" (click)="retry()">Try again</button>
       }
@@ -31,7 +31,7 @@
     } @else {
       <p role="status">
         Showing {{ displayed.page.page * displayed.page.size + 1 }}–{{ displayed.page.page * displayed.page.size + displayed.page.content.length }} of {{ displayed.page.totalElements }} feedback
-        entries. Newest first.
+        entries. {{ sortLabels[displayed.sort] }}.
       </p>
       <table>
         <caption>

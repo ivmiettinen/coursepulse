@@ -8,7 +8,7 @@ import { FeedbackPage } from './feedback-page';
 import { FeedbackPageResponse } from './feedback.models';
 
 describe('FeedbackPage', () => {
-  const feedbackUrl = '/api/course-offerings/1/feedback?page=0&size=20';
+  const feedbackUrl = '/api/course-offerings/1/feedback?page=0&size=20&sort=submittedAt,desc';
   const emptyPage: FeedbackPageResponse = {
     content: [],
     page: 0,
@@ -52,7 +52,7 @@ describe('FeedbackPage', () => {
     expect(element.querySelector('mat-progress-bar')?.getAttribute('aria-label')).toBe(
       'Loading course details',
     );
-    httpTesting.expectNone('/api/course-offerings/1/feedback?page=0&size=20');
+    httpTesting.expectNone('/api/course-offerings/1/feedback?page=0&size=20&sort=submittedAt,desc');
     httpTesting.expectOne({ method: 'GET', url: '/api/course-offerings/1' }).flush(offering);
     await fixture.whenStable();
     httpTesting.expectOne(feedbackUrl).flush(emptyPage);
@@ -154,7 +154,7 @@ describe('FeedbackPage', () => {
     expect(await paginator.getRangeLabel()).toBe('1 – 20 of 43');
     expect(await paginator.isPreviousPageDisabled()).toBe(true);
     await paginator.goToLastPage();
-    httpTesting.expectOne('/api/course-offerings/1/feedback?page=2&size=20').flush({
+    httpTesting.expectOne('/api/course-offerings/1/feedback?page=2&size=20&sort=submittedAt,desc').flush({
       ...emptyPage, page: 2, totalElements: 43, totalPages: 3,
       content: [41, 42, 43].map(feedback),
     });

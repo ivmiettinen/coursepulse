@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { FeedbackApi } from './feedback-api';
-import { FeedbackPageResponse } from './feedback.models';
+import { FeedbackPageResponse, FeedbackSort } from './feedback.models';
 
 describe('FeedbackApi', () => {
   let api: FeedbackApi;
@@ -19,10 +19,20 @@ describe('FeedbackApi', () => {
 
   afterEach(() => httpTesting.verify());
 
+  it.each<FeedbackSort>(['submittedAt,desc', 'submittedAt,asc', 'rating,desc', 'rating,asc'])(
+    'sends the selected sort %s', async (sort) => {
+      const result = firstValueFrom(api.getFeedback(123, { sort }));
+      const request = httpTesting.expectOne((request) => request.url === '/api/course-offerings/123/feedback');
+      expect(request.request.params.get('sort')).toBe(sort);
+      request.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+      await result;
+    },
+  );
+
   it('sends the selected zero-based page and page size', async () => {
     const result = firstValueFrom(api.getFeedback(123, { page: 2, size: 10 }));
     const request = httpTesting.expectOne({
-      method: 'GET', url: '/api/course-offerings/123/feedback?page=2&size=10',
+      method: 'GET', url: '/api/course-offerings/123/feedback?page=2&size=10&sort=submittedAt,desc',
     });
     request.flush({ content: [], page: 2, size: 10, totalElements: 0, totalPages: 0 });
     expect((await result).page).toBe(2);
@@ -43,7 +53,7 @@ describe('FeedbackApi', () => {
 
     const request = httpTesting.expectOne({
       method: 'GET',
-      url: '/api/course-offerings/123/feedback?page=0&size=20',
+      url: '/api/course-offerings/123/feedback?page=0&size=20&sort=submittedAt,desc',
     });
     expect(request.request.params.get('page')).toBe('0');
     expect(request.request.params.get('size')).toBe('20');
@@ -62,7 +72,7 @@ describe('FeedbackApi', () => {
     };
     const result = firstValueFrom(api.getFeedback(123));
 
-    httpTesting.expectOne('/api/course-offerings/123/feedback?page=0&size=20').flush(page);
+    httpTesting.expectOne('/api/course-offerings/123/feedback?page=0&size=20&sort=submittedAt,desc').flush(page);
 
     expect(await result).toEqual(page);
   });
@@ -72,7 +82,7 @@ describe('FeedbackApi', () => {
     const result = firstValueFrom(api.getFeedback(123));
     const assertion = expect(result).rejects.toMatchObject({ status, error: body });
 
-    httpTesting.expectOne('/api/course-offerings/123/feedback?page=0&size=20').flush(body, {
+    httpTesting.expectOne('/api/course-offerings/123/feedback?page=0&size=20&sort=submittedAt,desc').flush(body, {
       status,
       statusText: status === 404 ? 'Not Found' : 'Internal Server Error',
     });
@@ -85,7 +95,7 @@ describe('FeedbackApi', () => {
     const assertion = expect(result).rejects.toBeInstanceOf(HttpErrorResponse);
     const statusAssertion = expect(result).rejects.toMatchObject({ status: 0 });
 
-    httpTesting.expectOne('/api/course-offerings/123/feedback?page=0&size=20').error(new ProgressEvent('error'));
+    httpTesting.expectOne('/api/course-offerings/123/feedback?page=0&size=20&sort=submittedAt,desc').error(new ProgressEvent('error'));
 
     await Promise.all([assertion, statusAssertion]);
   });
