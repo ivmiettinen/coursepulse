@@ -1,5 +1,6 @@
 package com.coursepulse.common.api.error;
 
+import com.coursepulse.course.CourseNotFoundException;
 import com.coursepulse.course.CourseOfferingNotFoundException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +20,11 @@ import java.util.List;
 
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @ExceptionHandler(CourseNotFoundException.class)
+    public ProblemDetail handleCourseNotFound(CourseNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
 
     @ExceptionHandler(CourseOfferingNotFoundException.class)
     public ProblemDetail handleCourseOfferingNotFound(CourseOfferingNotFoundException exception) {
