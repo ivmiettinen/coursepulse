@@ -1,10 +1,50 @@
-@let page = state();
+<div class="course-selection" role="group" aria-label="Course and offering selection">
+  @let courses = coursesState();
+  @switch (courses.status) {
+    @case ('loading') { <p role="status">Loading courses…</p> }
+    @case ('error') {
+      <p role="alert">We could not load the courses. Please try again.</p>
+      <button mat-button type="button" (click)="retryCourses()">Retry courses</button>
+    }
+    @case ('ready') {
+      @if (courses.courses.length === 0) {
+        <p role="status">No courses available.</p>
+      } @else {
+        <mat-form-field appearance="outline">
+          <mat-label>Course</mat-label>
+          <mat-select [value]="selectedCourseId()" (selectionChange)="selectCourse($event.value)">
+            @for (course of courses.courses; track course.id) {
+              <mat-option [value]="course.id">{{ course.code }} — {{ course.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    }
+  }
+  @let page = state();
+  <mat-form-field appearance="outline">
+    <mat-label>Course offering</mat-label>
+    <mat-select [value]="page.status === 'ready' ? page.offering.id : null"
+      [disabled]="offerings().length === 0"
+      (selectionChange)="navigateToOffering($event.value)">
+      @for (offering of offerings(); track offering.id) {
+        <mat-option [value]="offering.id">{{ offering.academicYear }} — {{ offering.period }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
 @switch (page.status) {
   @case ('loading') {
     <section class="state-panel" aria-labelledby="loading-title" aria-busy="true">
       <h1 id="loading-title">Course details</h1>
       <p role="status">Loading course details…</p>
       <mat-progress-bar mode="indeterminate" aria-label="Loading course details" />
+    </section>
+  }
+  @case ('empty') {
+    <section class="state-panel">
+      <h1>Course feedback</h1>
+      <p role="status">No course offerings available for this course. Choose another course to view feedback.</p>
     </section>
   }
   @case ('error') {
@@ -33,6 +73,9 @@
         </div>
       </dl>
     </header>
-    <app-feedback-list [courseOfferingId]="page.offering.id" />
+    @for (offering of [page.offering]; track offering.id) {
+      <app-feedback-list [courseOfferingId]="offering.id" [initialPreferences]="preferences()"
+        (preferencesChange)="preferences.set($event)" />
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, OnInit, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,7 +14,8 @@ import { FeedbackFilters, FeedbackRating, FeedbackSort, feedbackSortLabels } fro
   styleUrl: './feedback-filter-bar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FeedbackFilterBar {
+export class FeedbackFilterBar implements OnInit {
+  readonly initialSort = input<FeedbackSort>('submittedAt,desc');
   private appliedSearch = '';
   readonly filtersChange = output<FeedbackFilters>();
   readonly sortChange = output<FeedbackSort>();
@@ -28,6 +29,10 @@ export class FeedbackFilterBar {
     search: new FormControl('', { nonNullable: true }),
     rating: new FormControl<FeedbackRating | null>(null),
   });
+
+  ngOnInit(): void {
+    this.sort.setValue(this.initialSort(), { emitEvent: false });
+  }
 
   constructor() {
     this.sort.valueChanges.pipe(takeUntilDestroyed()).subscribe((sort) => {

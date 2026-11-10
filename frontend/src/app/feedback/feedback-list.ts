@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -22,7 +22,9 @@ type FeedbackState =
   styleUrl: './feedback-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FeedbackList {
+export class FeedbackList implements OnInit {
+  readonly initialPreferences = input<{ size: number; sort: FeedbackSort }>({ size: 20, sort: 'submittedAt,desc' });
+  readonly preferencesChange = output<{ size: number; sort: FeedbackSort }>();
   readonly courseOfferingId = input.required<number>();
 
   private readonly feedbackApi = inject(FeedbackApi);
@@ -71,11 +73,16 @@ export class FeedbackList {
     { initialValue: { status: 'loading' } as FeedbackState },
   );
 
+  ngOnInit(): void {
+    this.feedbackQuery.next({ ...this.selectedFeedbackQuery(), ...this.initialPreferences() });
+  }
+
   protected retry(): void {
     this.reload.next();
   }
 
   protected changePage(event: PageEvent): void {
+    this.preferencesChange.emit({ size: event.pageSize, sort: this.selectedFeedbackQuery().sort });
     this.feedbackQuery.next({
       ...this.selectedFeedbackQuery(),
       page: event.pageSize === this.selectedFeedbackQuery().size ? event.pageIndex : 0,
@@ -88,6 +95,7 @@ export class FeedbackList {
   }
 
   protected changeSort(sort: FeedbackSort): void {
+    this.preferencesChange.emit({ size: this.selectedFeedbackQuery().size, sort });
     this.feedbackQuery.next({ ...this.selectedFeedbackQuery(), sort, page: 0 });
   }
 }

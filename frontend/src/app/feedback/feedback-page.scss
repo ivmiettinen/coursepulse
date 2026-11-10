@@ -56,3 +56,16 @@ dd {
   border-radius: 0.85rem;
   box-shadow: 0 3px 12px var(--cp-panel-shadow-color);
 }
+
+.course-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1rem;
+
+  mat-form-field {
+    flex: 1 1 18rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+}

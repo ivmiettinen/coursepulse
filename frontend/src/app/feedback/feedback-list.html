@@ -1,7 +1,7 @@
 @let result = state();
 <section aria-labelledby="feedback-title" [attr.aria-busy]="result.status === 'loading'">
   <h2 id="feedback-title">Feedback</h2>
-  <app-feedback-filter-bar (filtersChange)="applyFilters($event)" (sortChange)="changeSort($event)" />
+  <app-feedback-filter-bar [initialSort]="initialPreferences().sort" (filtersChange)="applyFilters($event)" (sortChange)="changeSort($event)" />
   <div class="loading-indicator">
     @switch (result.status) {
       @case ('loading') {

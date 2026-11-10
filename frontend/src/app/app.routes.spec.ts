@@ -16,9 +16,11 @@ describe('Application routes', () => {
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('redirects the root URL to the feedback page and displays course details', async () => {
+  it('sets the default offering URL before loading its details once', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/', FeedbackPage);
+    await harness.fixture.whenStable();
+    expect(TestBed.inject(Router).url).toBe('/feedback?offeringId=1');
     const offering: CourseOffering = {
       id: 1,
       courseId: 1,
@@ -28,15 +30,20 @@ describe('Application routes', () => {
       period: 'Period 1',
     };
 
+    TestBed.inject(HttpTestingController).expectOne('/api/courses').flush([
+      { id: offering.courseId, code: offering.courseCode, name: offering.courseName },
+    ]);
     TestBed.inject(HttpTestingController)
       .expectOne({ method: 'GET', url: '/api/course-offerings/1' })
       .flush(offering);
+    TestBed.inject(HttpTestingController).expectOne('/api/courses/1/offerings').flush([offering]);
     await harness.fixture.whenStable();
     TestBed.inject(HttpTestingController)
       .expectOne('/api/course-offerings/1/feedback?page=0&size=20&sort=submittedAt,desc')
       .flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
 
-    expect(TestBed.inject(Router).url).toBe('/feedback');
+    expect(TestBed.inject(Router).url).toBe('/feedback?offeringId=1');
+    TestBed.inject(HttpTestingController).expectNone('/api/course-offerings/1');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe(offering.courseName);
   });
 });
