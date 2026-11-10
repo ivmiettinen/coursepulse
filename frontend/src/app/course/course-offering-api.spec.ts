@@ -19,6 +19,54 @@ describe('CourseOfferingApi', () => {
 
   afterEach(() => httpTesting.verify());
 
+  it('gets offerings for the requested course and preserves their details and response order', async () => {
+    const offerings: readonly CourseOffering[] = [
+      {
+        id: 42,
+        courseId: 7,
+        courseCode: 'CS101',
+        courseName: 'Programming Fundamentals',
+        academicYear: '2026–2027',
+        period: 'Period 1',
+      },
+      {
+        id: 15,
+        courseId: 7,
+        courseCode: 'CS101',
+        courseName: 'Programming Fundamentals',
+        academicYear: '2025–2026',
+        period: 'Period 2',
+      },
+    ];
+    const result = firstValueFrom(api.getCourseOfferings(7));
+
+    httpTesting.expectOne({ method: 'GET', url: '/api/courses/7/offerings' }).flush(offerings);
+
+    expect(await result).toEqual(offerings);
+  });
+
+  it('returns an empty offering list as a successful response', async () => {
+    const result = firstValueFrom(api.getCourseOfferings(7));
+
+    httpTesting.expectOne('/api/courses/7/offerings').flush([]);
+
+    expect(await result).toEqual([]);
+  });
+
+  it.each([
+    { courseId: 0, status: 400, statusText: 'Bad Request' },
+    { courseId: 999, status: 404, statusText: 'Not Found' },
+    { courseId: 7, status: 500, statusText: 'Internal Server Error' },
+  ])('passes HTTP $status errors from the offering list to the caller', async ({ courseId, status, statusText }) => {
+    const body = { detail: 'Course offerings request failed.' };
+    const result = firstValueFrom(api.getCourseOfferings(courseId));
+    const assertion = expect(result).rejects.toMatchObject({ status, error: body });
+
+    httpTesting.expectOne(`/api/courses/${courseId}/offerings`).flush(body, { status, statusText });
+
+    await assertion;
+  });
+
   it('gets the requested course offering and returns its details', async () => {
     const offering: CourseOffering = {
       id: 42,

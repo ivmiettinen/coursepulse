@@ -7,6 +7,10 @@ import { CourseOffering } from './course-offering';
 export class CourseOfferingApi {
   private readonly http = inject(HttpClient);
 
+  getCourseOfferings(courseId: number): Observable<readonly CourseOffering[]> {
+    return this.http.get<readonly CourseOffering[]>(`/api/courses/${courseId}/offerings`);
+  }
+
   getCourseOffering(courseOfferingId: number): Observable<CourseOffering> {
     return this.http.get<CourseOffering>(`/api/course-offerings/${courseOfferingId}`);
   }
