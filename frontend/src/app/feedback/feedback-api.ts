@@ -1,11 +1,17 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { FeedbackPageResponse, FeedbackQuery } from './feedback.models';
+import { FeedbackPageResponse, FeedbackQuery, FeedbackSummaryResponse } from './feedback.models';
 
 @Injectable({ providedIn: 'root' })
 export class FeedbackApi {
   private readonly http = inject(HttpClient);
+
+  getFeedbackSummary(courseOfferingId: number): Observable<FeedbackSummaryResponse> {
+    return this.http.get<FeedbackSummaryResponse>(
+      `/api/course-offerings/${courseOfferingId}/feedback-summary`,
+    );
+  }
 
   getFeedback(courseOfferingId: number, query: FeedbackQuery = {}): Observable<FeedbackPageResponse> {
     const search = query.search?.trim();

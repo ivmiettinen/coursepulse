@@ -18,6 +18,18 @@ export interface Feedback {
 
 export type FeedbackRating = 1 | 2 | 3 | 4 | 5;
 
+// Matches the backend's FeedbackSummaryDto response for the entire offering.
+export interface FeedbackSummaryResponse {
+  readonly totalFeedback: number;
+  readonly averageRating: number | null;
+  readonly ratingDistribution: readonly FeedbackRatingCount[];
+}
+
+export interface FeedbackRatingCount {
+  readonly rating: FeedbackRating;
+  readonly count: number;
+}
+
 export type FeedbackSort = 'submittedAt,desc' | 'submittedAt,asc' | 'rating,desc' | 'rating,asc';
 
 export const feedbackSortLabels: Record<FeedbackSort, string> = {

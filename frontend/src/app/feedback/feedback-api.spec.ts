@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { FeedbackApi } from './feedback-api';
-import { FeedbackPageResponse, FeedbackSort } from './feedback.models';
+import { FeedbackPageResponse, FeedbackSort, FeedbackSummaryResponse } from './feedback.models';
 
 describe('FeedbackApi', () => {
   let api: FeedbackApi;
@@ -18,6 +18,33 @@ describe('FeedbackApi', () => {
   });
 
   afterEach(() => httpTesting.verify());
+
+  it.each<FeedbackSummaryResponse>([
+    {
+      totalFeedback: 3,
+      averageRating: 14 / 3,
+      ratingDistribution: [
+        { rating: 1, count: 0 }, { rating: 2, count: 0 }, { rating: 3, count: 0 },
+        { rating: 4, count: 1 }, { rating: 5, count: 2 },
+      ],
+    },
+    {
+      totalFeedback: 0,
+      averageRating: null,
+      ratingDistribution: [
+        { rating: 1, count: 0 }, { rating: 2, count: 0 }, { rating: 3, count: 0 },
+        { rating: 4, count: 0 }, { rating: 5, count: 0 },
+      ],
+    },
+  ])('gets the offering summary without query parameters (total: $totalFeedback)', async (summary) => {
+    const result = firstValueFrom(api.getFeedbackSummary(123));
+
+    httpTesting.expectOne({
+      method: 'GET', url: '/api/course-offerings/123/feedback-summary',
+    }).flush(summary);
+
+    expect(await result).toEqual(summary);
+  });
 
   it.each<FeedbackSort>(['submittedAt,desc', 'submittedAt,asc', 'rating,desc', 'rating,asc'])(
     'sends the selected sort %s', async (sort) => {
