@@ -5,7 +5,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { BehaviorSubject, catchError, combineLatest, map, of, startWith, Subject, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, catchError, combineLatest, distinctUntilChanged, map, of, startWith, Subject, switchMap, tap } from 'rxjs';
 import { FeedbackApi } from './feedback-api';
 import { FeedbackFilterBar } from './feedback-filter-bar';
 import { FeedbackFilters, FeedbackPageResponse, FeedbackQuery, FeedbackSort, feedbackSortLabels } from './feedback.models';
@@ -45,7 +45,7 @@ export class FeedbackList implements OnInit {
     combineLatest({
       id: toObservable(this.courseOfferingId),
       retry: this.reload.pipe(startWith(null)),
-      feedbackQuery: this.feedbackQuery,
+      feedbackQuery: this.feedbackQuery.pipe(distinctUntilChanged(FeedbackList.isSameFeedbackQuery)),
     }).pipe(
       switchMap(({ id, feedbackQuery }) =>
         this.feedbackApi.getFeedback(id, feedbackQuery).pipe(
@@ -97,5 +97,15 @@ export class FeedbackList implements OnInit {
   protected changeSort(sort: FeedbackSort): void {
     this.preferencesChange.emit({ size: this.selectedFeedbackQuery().size, sort });
     this.feedbackQuery.next({ ...this.selectedFeedbackQuery(), sort, page: 0 });
+  }
+
+  // Compare every request parameter so repeated Search clicks skip the HTTP request.
+  // The separate retry stream can still repeat the same query after an error.
+  private static isSameFeedbackQuery(previous: Required<FeedbackQuery>, current: Required<FeedbackQuery>): boolean {
+    return previous.page === current.page
+      && previous.size === current.size
+      && previous.search === current.search
+      && previous.rating === current.rating
+      && previous.sort === current.sort;
   }
 }
