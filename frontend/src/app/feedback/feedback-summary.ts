@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, input, viewChild } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { catchError, combineLatest, map, of, startWith, Subject, switchMap } from 'rxjs';
@@ -22,6 +22,7 @@ export class FeedbackSummary {
   readonly courseOfferingId = input.required<number>();
   private readonly feedbackApi = inject(FeedbackApi);
   private readonly reload = new Subject<void>();
+  private readonly summaryTitle = viewChild.required<ElementRef<HTMLHeadingElement>>('summaryTitle');
 
   // Both an offering change and a retry load the latest offering's summary.
   // Seed retry so the first load does not wait for a button click.
@@ -40,6 +41,8 @@ export class FeedbackSummary {
   );
 
   protected retry(): void {
+    // Keep keyboard focus in the summary when the retry button disappears.
+    this.summaryTitle().nativeElement.focus();
     this.reload.next();
   }
 }

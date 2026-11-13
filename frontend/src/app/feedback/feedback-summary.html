@@ -1,6 +1,6 @@
 @let current = state();
 <section aria-labelledby="feedback-summary-title" [attr.aria-busy]="current.status === 'loading'">
-  <h2 id="feedback-summary-title">Feedback summary</h2>
+  <h2 #summaryTitle id="feedback-summary-title" tabindex="-1">Feedback summary</h2>
   <p class="scope">All feedback for this offering</p>
   @switch (current.status) {
     @case ('loading') {

@@ -58,18 +58,22 @@ describe('FeedbackSummary', () => {
       .toEqual(['0%', '0%', '0%', '0%', '0%']);
   });
 
-  it('allows repeated retries after errors and then displays the summary', async () => {
+  it('keeps focus in the summary during repeated retries and then displays the summary', async () => {
     for (let attempt = 0; attempt < 2; attempt++) {
       httpTesting.expectOne(url).flush(null, { status: 503, statusText: 'Service Unavailable' });
       await fixture.whenStable();
       expect(element.querySelector('[role="alert"]')?.textContent).toContain('could not load');
-      element.querySelector<HTMLButtonElement>('button')!.click();
+      const retryButton = element.querySelector<HTMLButtonElement>('button')!;
+      retryButton.focus();
+      retryButton.click();
       await fixture.whenStable();
       expect(element.querySelector('[role="status"]')?.textContent).toContain('Loading');
+      expect(document.activeElement).toBe(element.querySelector('h2'));
     }
     httpTesting.expectOne(url).flush(summary);
     await fixture.whenStable();
     expect(element.textContent).toContain('4.7 / 5');
+    expect(document.activeElement).toBe(element.querySelector('h2'));
   });
 
   it('clears old values and cancels requests when the offering changes or the component is destroyed', async () => {
