@@ -74,6 +74,7 @@
       </dl>
     </header>
     @for (offering of [page.offering]; track offering.id) {
+      <app-feedback-summary [courseOfferingId]="offering.id" />
       <app-feedback-list [courseOfferingId]="offering.id" [initialPreferences]="preferences()"
         (preferencesChange)="preferences.set($event)" />
     }

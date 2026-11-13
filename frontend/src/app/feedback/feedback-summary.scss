@@ -1,0 +1,69 @@
+:host {
+  display: block;
+  margin-top: 1.5rem;
+}
+
+section {
+  padding: clamp(1rem, 4vw, 2rem);
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 0.85rem;
+}
+
+h2, h3, p {
+  margin: 0 0 0.75rem;
+}
+
+.scope, dt, .count-label {
+  color: var(--cp-secondary-text-color);
+}
+
+.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 3rem;
+  margin: 1rem 0;
+}
+
+dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.distribution {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.track {
+  background: var(--cp-highlight-background-color);
+  border-radius: 0.25rem;
+}
+
+.bar {
+  display: block;
+  height: 0.75rem;
+  background: var(--cp-brand-background-color);
+  border-radius: inherit;
+}
+
+.count {
+  text-align: right;
+}
+
+@media (max-width: 30rem) {
+  .count-label {
+    display: block;
+    font-size: 0.75rem;
+  }
+}

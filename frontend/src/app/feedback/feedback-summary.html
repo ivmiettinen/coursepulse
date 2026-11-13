@@ -1,0 +1,39 @@
+@let current = state();
+<section aria-labelledby="feedback-summary-title" [attr.aria-busy]="current.status === 'loading'">
+  <h2 id="feedback-summary-title">Feedback summary</h2>
+  <p class="scope">All feedback for this offering</p>
+  @switch (current.status) {
+    @case ('loading') {
+      <p role="status">Loading feedback summary…</p>
+    }
+    @case ('error') {
+      <p role="alert">We could not load the feedback summary. Please try again.</p>
+      <button mat-button type="button" (click)="retry()">Retry summary</button>
+    }
+    @case ('ready') {
+      @let summary = current.summary;
+      <dl class="metrics">
+        <div><dt>Total feedback</dt><dd>{{ summary.totalFeedback }}</dd></div>
+        <div>
+          <dt>Average rating</dt>
+          <dd>{{ summary.averageRating === null ? 'Not available' : (summary.averageRating | number:'1.1-1') + ' / 5' }}</dd>
+        </div>
+      </dl>
+      @if (summary.totalFeedback === 0) {
+        <p role="status">No feedback yet.</p>
+      }
+      <h3>Rating distribution</h3>
+      <ul class="distribution">
+        @for (item of summary.ratingDistribution.slice().reverse(); track item.rating) {
+          <li>
+            <span>{{ item.rating }} / 5</span>
+            <span class="track" aria-hidden="true">
+              <span class="bar" [style.width.%]="summary.totalFeedback === 0 ? 0 : item.count / summary.totalFeedback * 100"></span>
+            </span>
+            <span class="count">{{ item.count }} <span class="count-label">responses</span></span>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

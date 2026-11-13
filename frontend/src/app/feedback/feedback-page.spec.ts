@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { MatPaginatorHarness } from '@angular/material/paginator/testing';
+import { provideRouter, Router } from '@angular/router';
 import { CourseOffering } from '../course/course-offering';
 import { FeedbackPage } from './feedback-page';
 import { FeedbackPageResponse } from './feedback.models';
@@ -31,15 +32,18 @@ describe('FeedbackPage', () => {
   let element: HTMLElement;
   let httpTesting: HttpTestingController;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     TestBed.configureTestingModule({
       imports: [FeedbackPage],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     });
     httpTesting = TestBed.inject(HttpTestingController);
+    await TestBed.inject(Router).navigateByUrl('/?offeringId=1');
     fixture = TestBed.createComponent(FeedbackPage);
     element = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
+    httpTesting.expectOne('/api/courses').flush([{ id: 1, code: 'CS101', name: offering.courseName }]);
+    await fixture.whenStable();
   });
 
   afterEach(() => httpTesting.verify());
@@ -53,17 +57,15 @@ describe('FeedbackPage', () => {
       'Loading course details',
     );
     httpTesting.expectNone('/api/course-offerings/1/feedback?page=0&size=20&sort=submittedAt,desc');
-    httpTesting.expectOne({ method: 'GET', url: '/api/course-offerings/1' }).flush(offering);
-    await fixture.whenStable();
+    await loadCourseDetails();
     httpTesting.expectOne(feedbackUrl).flush(emptyPage);
   });
 
   it('renders the course name, code, academic year and period from the response', async () => {
-    httpTesting.expectOne('/api/course-offerings/1').flush(offering);
-    await fixture.whenStable();
+    await loadCourseDetails();
 
     expect(element.querySelector('h1')?.textContent).toBe(offering.courseName);
-    expect(Array.from(element.querySelectorAll('dd'), (item) => item.textContent?.trim())).toEqual([
+    expect(Array.from(element.querySelectorAll('.offering-details dd'), (item) => item.textContent?.trim())).toEqual([
       offering.courseCode,
       offering.academicYear,
       offering.period,
@@ -127,8 +129,7 @@ describe('FeedbackPage', () => {
       expect(element.querySelector('button')).toBeNull();
     }
 
-    httpTesting.expectOne('/api/course-offerings/1').flush(offering);
-    await fixture.whenStable();
+    await loadCourseDetails();
 
     expect(element.querySelector('h1')?.textContent).toBe(offering.courseName);
     httpTesting.expectOne(feedbackUrl).flush(emptyPage);
@@ -136,6 +137,18 @@ describe('FeedbackPage', () => {
 
   async function loadCourseDetails(): Promise<void> {
     httpTesting.expectOne('/api/course-offerings/1').flush(offering);
+    httpTesting.expectOne('/api/courses/1/offerings').flush([offering, { ...offering, id: 2 }]);
+    await fixture.whenStable();
+    httpTesting.expectOne('/api/course-offerings/1/feedback-summary').flush({
+      totalFeedback: 1, averageRating: 5,
+      ratingDistribution: [
+        { rating: 1, count: 0 },
+        { rating: 2, count: 0 },
+        { rating: 3, count: 0 },
+        { rating: 4, count: 0 },
+        { rating: 5, count: 1 },
+      ],
+    });
     await fixture.whenStable();
   }
 
@@ -255,6 +268,42 @@ describe('FeedbackPage', () => {
     const request = httpTesting.expectOne(feedbackUrl);
     fixture.destroy();
     expect(request.cancelled).toBe(true);
+  });
+
+  it('keeps the summary independent of list filtering and retries it for a new offering', async () => {
+    await loadCourseDetails();
+    httpTesting.expectOne(feedbackUrl).flush(emptyPage);
+    await fixture.whenStable();
+    // Filtering affects only the list; the summary still describes the whole offering.
+    const search = element.querySelector<HTMLInputElement>('app-feedback-filter-bar input')!;
+    search.value = 'clear';
+    search.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('app-feedback-filter-bar form')!
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    httpTesting.expectOne((request) => request.url.endsWith('/feedback') && request.params.get('search') === 'clear')
+      .flush(emptyPage);
+    httpTesting.expectNone('/api/course-offerings/1/feedback-summary');
+    expect(element.querySelector('app-feedback-summary')?.textContent).toContain('5.0 / 5');
+
+    // A new offering needs both requests; a summary failure must not hide the list.
+    await TestBed.inject(Router).navigateByUrl('/?offeringId=2');
+    await fixture.whenStable();
+    httpTesting.expectOne('/api/course-offerings/2').flush({ ...offering, id: 2 });
+    await fixture.whenStable();
+    const summaryRequest = httpTesting.expectOne('/api/course-offerings/2/feedback-summary');
+    httpTesting.expectOne('/api/course-offerings/2/feedback?page=0&size=20&sort=submittedAt,desc').flush(emptyPage);
+    summaryRequest.flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await fixture.whenStable();
+    expect(element.querySelector('app-feedback-list')?.textContent).toContain('No feedback yet');
+    // Retrying the summary must not reload the already available list.
+    element.querySelector<HTMLButtonElement>('app-feedback-summary button')!.click();
+    await fixture.whenStable();
+    httpTesting.expectOne('/api/course-offerings/2/feedback-summary').flush({
+      totalFeedback: 0, averageRating: null,
+      ratingDistribution: [1, 2, 3, 4, 5].map((rating) => ({ rating, count: 0 })),
+    });
+    httpTesting.expectNone((request) => request.url.endsWith('/feedback'));
   });
 
   it('cancels an in-flight request when the page is destroyed', () => {

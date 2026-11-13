@@ -39,6 +39,12 @@ describe('Application routes', () => {
     TestBed.inject(HttpTestingController).expectOne('/api/courses/1/offerings').flush([offering]);
     await harness.fixture.whenStable();
     TestBed.inject(HttpTestingController)
+      .expectOne('/api/course-offerings/1/feedback-summary')
+      .flush({
+        totalFeedback: 0, averageRating: null,
+        ratingDistribution: [1, 2, 3, 4, 5].map((rating) => ({ rating, count: 0 })),
+      });
+    TestBed.inject(HttpTestingController)
       .expectOne('/api/course-offerings/1/feedback?page=0&size=20&sort=submittedAt,desc')
       .flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
 

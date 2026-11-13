@@ -12,6 +12,7 @@ import { CourseApi } from '../course/course-api';
 import { CourseOffering } from '../course/course-offering';
 import { CourseOfferingApi } from '../course/course-offering-api';
 import { FeedbackList } from './feedback-list';
+import { FeedbackSummary } from './feedback-summary';
 import { FeedbackRouteSelection, parseSelectionFromQueryParams } from './feedback-route-selection';
 import { FeedbackSort } from './feedback.models';
 
@@ -30,7 +31,7 @@ type CoursesState =
 
 @Component({
   selector: 'app-feedback-page',
-  imports: [MatButtonModule, MatProgressBarModule, MatFormFieldModule, MatSelectModule, FeedbackList],
+  imports: [MatButtonModule, MatProgressBarModule, MatFormFieldModule, MatSelectModule, FeedbackList, FeedbackSummary],
   templateUrl: './feedback-page.html',
   styleUrl: './feedback-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
