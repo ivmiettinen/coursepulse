@@ -1,0 +1,11 @@
+# Allow only build inputs; omit node_modules, caches, Git and local secrets.
+**
+!package.json
+!package-lock.json
+!angular.json
+!tsconfig*.json
+!Caddyfile
+!src/
+!src/**
+!public/
+!public/**

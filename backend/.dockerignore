@@ -1,0 +1,11 @@
+# Allow only build inputs; local settings and credentials stay outside the image.
+**
+!gradlew
+!build.gradle
+!settings.gradle
+!gradle/
+!gradle/wrapper/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!src/
+!src/**
